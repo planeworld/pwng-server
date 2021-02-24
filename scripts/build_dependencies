@@ -1,0 +1,97 @@
+#!/bin/bash
+
+cd $(dirname "$0")/..
+
+mkdir -p install
+mkdir -p 3rdparty
+cd 3rdparty
+
+git config --global advice.detachedHead false
+
+echo "--- CLONING ARGAGG ---"
+git clone --depth 1 https://github.com/vietjtnguyen/argagg.git > /dev/null
+
+echo "--- CLONING LIBNOISE2D ---"
+git clone --depth 1 https://github.com/planeworld/libnoise2d.git > /dev/null
+
+echo "--- CLONING BOX2D ---"
+git clone --branch v2.4.1 --depth 1 https://github.com/erincatto/box2d.git > /dev/null
+
+echo "--- CLONING ENTT ---"
+git clone --branch v3.5.2 --depth 1 https://github.com/skypjack/entt.git > /dev/null
+
+echo "--- CLONING ASIO ---"
+git clone --branch asio-1-18-1 --depth 1 https://github.com/chriskohlhoff/asio.git > /dev/null
+
+echo "--- CLONING WEBSOCKET++ ---"
+git clone --branch 0.8.2 --depth 1 https://github.com/zaphoyd/websocketpp.git > /dev/null
+
+# Install argagg
+
+echo "--- INSTALLING ARGAGG ---"
+cd argagg
+
+# patch CMake version to avoid warning
+sed -i "1c cmake_minimum_required(VERSION 3.1)" CMakeLists.txt > /dev/null
+
+mkdir -p build
+cd build
+cmake .. -DCMAKE_INSTALL_PREFIX=../../../install -DARGAGG_BUILD_DOCS=OFF -DARGAGG_BUILD_EXAMPLES=OFF -DARGAGG_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=RELEASE > /dev/null
+make install > /dev/null
+cd ../..
+
+# Install libnoise2d
+
+echo "--- INSTALLING LIBNOISE2D ---"
+cd libnoise2d
+mkdir -p build
+cd build
+cmake .. -DCMAKE_INSTALL_PREFIX=../../../install -DUSE_XXHASH=ON -DCMAKE_BUILD_TYPE=RELEASE > /dev/null
+make -j8 install > /dev/null
+cd ../..
+
+# Install box2d
+
+echo "--- INSTALLING BOX2D ---"
+cd box2d
+mkdir -p build
+cd build
+cmake .. -DCMAKE_INSTALL_PREFIX=../../../install -DBOX2D_BUILD_TESTBED=OFF -DBOX2D_BUILD_UNIT_TESTS=OFF -DCMAKE_BUILD_TYPE=RELEASE > /dev/null
+make -j8 install > /dev/null
+cd ../..
+
+# Install entt
+
+echo "--- INSTALLING ENTT ---"
+cd entt
+# build directory already exists
+#mkdir -p build
+cd build
+cmake .. -DCMAKE_INSTALL_PREFIX=../../../install -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=RELEASE > /dev/null
+make -j8 install > /dev/null
+cd ../..
+
+# Install asio
+#   This is a little different, since asio standalone relies on autotools
+echo "--- INSTALLING ASIO ---"
+cd asio/asio
+./autogen.sh > /dev/null
+ASIO_INSTALL_PATH=$(pwd)/../../../install
+./configure --prefix=$ASIO_INSTALL_PATH > /dev/null
+make -j8 > /dev/null && make install > /dev/null
+cd ../..
+
+
+# Install websocketpp
+
+echo "--- INSTALLING WEBSOCKET++ ---"
+cd websocketpp
+
+# patch CMake version to avoid warning
+sed -i "5c cmake_minimum_required(VERSION 3.1)" CMakeLists.txt > /dev/null
+
+mkdir -p build
+cd build
+cmake .. -DCMAKE_INSTALL_PREFIX=../../../install -DCMAKE_BUILD_TYPE=RELEASE > /dev/null
+make -j8 install > /dev/null
+cd ../..
