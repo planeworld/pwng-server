@@ -20,11 +20,18 @@ git clone --branch v2.4.1 --depth 1 https://github.com/erincatto/box2d.git > /de
 echo "--- CLONING ENTT ---"
 git clone --branch v3.5.2 --depth 1 https://github.com/skypjack/entt.git > /dev/null
 
+echo "--- CLONING JSON ---"
+git clone --branch v3.9.1 --depth 1 https://github.com/nlohmann/json.git > /dev/null
+
+echo "--- CLONING CONCURRENT_QUEUE ---"
+git clone --branch v1.0.3 --depth 1 https://github.com/cameron314/concurrentqueue.git > /dev/null
+
 echo "--- CLONING ASIO ---"
 git clone --branch asio-1-18-1 --depth 1 https://github.com/chriskohlhoff/asio.git > /dev/null
 
 echo "--- CLONING WEBSOCKET++ ---"
 git clone --branch 0.8.2 --depth 1 https://github.com/zaphoyd/websocketpp.git > /dev/null
+
 
 # Install argagg
 
@@ -68,6 +75,27 @@ cd entt
 #mkdir -p build
 cd build
 cmake .. -DCMAKE_INSTALL_PREFIX=../../../install -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=RELEASE > /dev/null
+make -j8 install > /dev/null
+cd ../..
+
+# Install json
+
+echo "--- INSTALLING JSON ---"
+cd json
+mkdir -p build
+cd build
+cmake .. -DCMAKE_INSTALL_PREFIX=../../../install -DBUILD_TESTING=OFF -DJSON_BuildTests=OFF -DCMAKE_BUILD_TYPE=RELEASE > /dev/null
+make -j8 install > /dev/null
+cd ../..
+
+# Install concurrent queue
+
+echo "--- INSTALLING CONCURRENT_QUEUE ---"
+cd concurrentqueue
+# build already exists and conflicts with cmake config. Hence, build0
+mkdir -p build0
+cd build0
+cmake .. -DCMAKE_INSTALL_PREFIX=../../../install -DCMAKE_BUILD_TYPE=RELEASE > /dev/null
 make -j8 install > /dev/null
 cd ../..
 
