@@ -1,8 +1,9 @@
 #ifndef NETWORK_MANAGER_HPP
 #define NETWORK_MANAGER_HPP
 
-#define ASIO_STANDALONE
+#include <concurrentqueue/concurrentqueue.h>
 
+#define ASIO_STANDALONE
 #include <websocketpp/common/thread.hpp>
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
@@ -14,10 +15,14 @@ class NetworkManager
 
         typedef websocketpp::server<websocketpp::config::asio> ServerType;
 
-        void init();
+        void init(moodycamel::ConcurrentQueue<std::string>* const _InputQueue,
+                  moodycamel::ConcurrentQueue<std::string>* const _OutputQueue);
         void onMessage(websocketpp::connection_hdl, ServerType::message_ptr _Msg);
 
     private:
+
+        moodycamel::ConcurrentQueue<std::string>* InputQueue_;
+        moodycamel::ConcurrentQueue<std::string>* OutputQueue_;
 
         ServerType Server_;
         websocketpp::lib::shared_ptr<websocketpp::lib::thread> Thread_;

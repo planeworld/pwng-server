@@ -2,16 +2,17 @@
 
 #include <nlohmann/json.hpp>
 
-// For convenience
-using json = nlohmann::json;
-
-void NetworkManager::init()
+void NetworkManager::init(moodycamel::ConcurrentQueue<std::string>* const _InputQueue,
+                          moodycamel::ConcurrentQueue<std::string>* const _OutputQueue)
 {
+    InputQueue_ = _InputQueue;
+    OutputQueue_ = _OutputQueue;
+
     Server_.clear_access_channels(websocketpp::log::alevel::all);
     Server_.clear_error_channels(websocketpp::log::elevel::all);
 
     Server_.set_message_handler(std::bind(&NetworkManager::onMessage, this,
-                                            std::placeholders::_1, std::placeholders::_2));
+                                std::placeholders::_1, std::placeholders::_2));
 
     Server_.init_asio();
     Server_.listen(9002);
@@ -24,8 +25,5 @@ void NetworkManager::init()
 
 void NetworkManager::onMessage(websocketpp::connection_hdl, ServerType::message_ptr _Msg)
 {
-    json j = json::parse(_Msg->get_payload());
-
-    std::cout << _Msg->get_payload() << std::endl;
-    std::cout << "Extracted message: " << j["Message"] << std::endl;
+    InputQueue_->enqueue(_Msg->get_payload());
 }
