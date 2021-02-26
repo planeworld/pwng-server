@@ -5,30 +5,19 @@
 #include "network_manager.hpp"
 
 
-void on_message(websocketpp::connection_hdl, NetworkManager::ServerType::message_ptr msg)
-{
-    std::cout << msg->get_payload() << std::endl;
-}
-
 int main()
 {
     entt::registry Reg;
-    NetworkManager NetMan;
 
-    NetworkManager::ServerType Server;
+    Reg.set<NetworkManager>();
 
-    // Reg.set<NetworkManager>(NetMserver Server;
+    Reg.ctx<NetworkManager>().init();
 
-    Server.set_message_handler(&on_message);
-    Server.set_access_channels(websocketpp::log::alevel::all);
-    Server.set_error_channels(websocketpp::log::elevel::all);
 
-    Server.init_asio();
-    Server.listen(9002);
-    websocketpp::lib::error_code ec;
-    Server.start_accept(ec); // omit error handling to keep example consise
-
-    Server.run();
+    bool IsRunning = true;
+    while (IsRunning)
+    {
+    }
 
     return EXIT_SUCCESS;
 }

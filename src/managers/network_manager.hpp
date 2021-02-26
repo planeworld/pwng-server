@@ -3,8 +3,9 @@
 
 #define ASIO_STANDALONE
 
-#include <websocketpp/server.hpp>
+#include <websocketpp/common/thread.hpp>
 #include <websocketpp/config/asio_no_tls.hpp>
+#include <websocketpp/server.hpp>
 
 class NetworkManager
 {
@@ -13,22 +14,13 @@ class NetworkManager
 
         typedef websocketpp::server<websocketpp::config::asio> ServerType;
 
-        NetworkManager()
-        {
-            // Server_.set_message_handler(&NetworkManager::on_message);
-        }
-
-        void on_message(websocketpp::connection_hdl, ServerType::message_ptr msg)
-        {
-            std::cout << msg->get_payload() << std::endl;
-        }
-
+        void init();
+        void onMessage(websocketpp::connection_hdl, ServerType::message_ptr _Msg);
 
     private:
 
-        asio::io_service IOService_;
         ServerType Server_;
-
+        websocketpp::lib::shared_ptr<websocketpp::lib::thread> Thread_;
 };
 
 #endif // NETWORK_MANAGER_HPP
