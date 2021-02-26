@@ -1,4 +1,5 @@
 find_package(Threads)
+find_package(nlohmann_json 3.2.0 REQUIRED)
 
 set(HEADERS
   managers/network_manager.cpp
@@ -16,9 +17,10 @@ target_include_directories(pwng-server PRIVATE "${PROJECT_SOURCE_DIR}/src/manage
 target_include_directories(pwng-server PRIVATE "${PROJECT_SOURCE_DIR}/install/include/")
 
 target_link_libraries(pwng-server PRIVATE
-    Threads::Threads
-    ${BOX2D_LIBRARY_LOCAL}
-    ${LIBNOISE_LIBRARY_LOCAL}
+  Threads::Threads
+  nlohmann_json::nlohmann_json
+  ${BOX2D_LIBRARY_LOCAL}
+  ${LIBNOISE_LIBRARY_LOCAL}
 )
 
 
