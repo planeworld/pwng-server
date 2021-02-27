@@ -16,7 +16,8 @@ class NetworkManager
         typedef websocketpp::server<websocketpp::config::asio> ServerType;
 
         void init(moodycamel::ConcurrentQueue<std::string>* const _InputQueue,
-                  moodycamel::ConcurrentQueue<std::string>* const _OutputQueue);
+                  moodycamel::ConcurrentQueue<std::string>* const _OutputQueue,
+                  int _Port);
         void onMessage(websocketpp::connection_hdl, ServerType::message_ptr _Msg);
 
     private:

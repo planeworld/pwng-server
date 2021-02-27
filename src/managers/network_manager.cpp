@@ -3,7 +3,8 @@
 #include <nlohmann/json.hpp>
 
 void NetworkManager::init(moodycamel::ConcurrentQueue<std::string>* const _InputQueue,
-                          moodycamel::ConcurrentQueue<std::string>* const _OutputQueue)
+                          moodycamel::ConcurrentQueue<std::string>* const _OutputQueue,
+                          int _Port)
 {
     InputQueue_ = _InputQueue;
     OutputQueue_ = _OutputQueue;
@@ -15,7 +16,7 @@ void NetworkManager::init(moodycamel::ConcurrentQueue<std::string>* const _Input
                                 std::placeholders::_1, std::placeholders::_2));
 
     Server_.init_asio();
-    Server_.listen(9002);
+    Server_.listen(_Port);
 
     websocketpp::lib::error_code EC;
     Server_.start_accept(EC);
