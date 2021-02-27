@@ -4,6 +4,7 @@
 #include <concurrentqueue/concurrentqueue.h>
 
 #include "network_manager.hpp"
+#include "simulation_manager.hpp"
 
 
 int main()
@@ -14,6 +15,9 @@ int main()
 
     Reg.set<NetworkManager>();
     Reg.ctx<NetworkManager>().init(&InputQueue, &OutputQueue);
+    Reg.set<SimulationManager>();
+
+    Reg.ctx<SimulationManager>().init();
 
     bool IsRunning = true;
     while (IsRunning)

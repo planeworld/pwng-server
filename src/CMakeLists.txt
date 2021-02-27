@@ -2,7 +2,8 @@ find_package(Threads)
 find_package(nlohmann_json 3.2.0 REQUIRED)
 
 set(HEADERS
-  managers/network_manager.cpp
+  managers/network_manager.hpp
+  managers/simulation_manager.hpp
 )
 
 set(SOURCES
