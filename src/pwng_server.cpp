@@ -41,8 +41,6 @@ int parseArguments(int argc, char* argv[])
         Port = Args["port"];
     }
 
-    std::cout << Port << std::endl;
-
     return Port;
 }
 
@@ -68,6 +66,7 @@ int main(int argc, char* argv[])
             bool NewMessageFound = InputQueue.try_dequeue(Message);
             if (NewMessageFound)
                 std::cout << Message << std::endl;
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
         return EXIT_SUCCESS;
     }
