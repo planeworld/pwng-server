@@ -1,6 +1,8 @@
 #ifndef NETWORK_MANAGER_HPP
 #define NETWORK_MANAGER_HPP
 
+#include <thread>
+
 #include <concurrentqueue/concurrentqueue.h>
 
 #define ASIO_STANDALONE
@@ -22,11 +24,21 @@ class NetworkManager
 
     private:
 
+        void send()
+        {
+            while (true)
+            {
+                std::cout << "Sending messages" << std::endl;
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            }
+        }
+
         moodycamel::ConcurrentQueue<std::string>* InputQueue_;
         moodycamel::ConcurrentQueue<std::string>* OutputQueue_;
 
         ServerType Server_;
         websocketpp::lib::shared_ptr<websocketpp::lib::thread> Thread_;
+        std::thread ThreadSender_;
 };
 
 #endif // NETWORK_MANAGER_HPP

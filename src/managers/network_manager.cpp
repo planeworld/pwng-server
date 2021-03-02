@@ -22,6 +22,7 @@ void NetworkManager::init(moodycamel::ConcurrentQueue<std::string>* const _Input
     Server_.start_accept(EC);
 
     Thread_.reset(new websocketpp::lib::thread(&ServerType::run, &Server_));
+    ThreadSender_ = std::thread(&NetworkManager::send, this);
 }
 
 void NetworkManager::onMessage(websocketpp::connection_hdl, ServerType::message_ptr _Msg)

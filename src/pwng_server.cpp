@@ -5,7 +5,9 @@
 #include <concurrentqueue/concurrentqueue.h>
 
 #include "network_manager.hpp"
+#include "position_component.hpp"
 #include "simulation_manager.hpp"
+#include "velocity_component.hpp"
 
 constexpr int PWNG_ABORT_STARTUP = -1;
 
@@ -50,12 +52,17 @@ int main(int argc, char* argv[])
     if (Port != PWNG_ABORT_STARTUP)
     {
         entt::registry Reg;
+
+        auto IntegratorGroup = Reg.group<PositionComponent<double>,
+                                         VelocityComponent<double>,
+                                         AccelerationComponent<double>>();
+
         moodycamel::ConcurrentQueue<std::string> InputQueue;
         moodycamel::ConcurrentQueue<std::string> OutputQueue;
 
         Reg.set<NetworkManager>();
         Reg.ctx<NetworkManager>().init(&InputQueue, &OutputQueue, Port);
-        Reg.set<SimulationManager>();
+        Reg.set<SimulationManager>(Reg);
 
         Reg.ctx<SimulationManager>().init();
 
