@@ -12,6 +12,7 @@ set(HEADERS
 
 set(SOURCES
   managers/network_manager.cpp
+  managers/simulation_manager.cpp
   pwng_server.cpp
 )
 

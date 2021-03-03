@@ -1,6 +1,9 @@
 #ifndef NETWORK_MANAGER_HPP
 #define NETWORK_MANAGER_HPP
 
+#include <map>
+#include <mutex>
+#include <string>
 #include <thread>
 
 #include <concurrentqueue/concurrentqueue.h>
@@ -17,28 +20,28 @@ class NetworkManager
 
         typedef websocketpp::server<websocketpp::config::asio> ServerType;
 
-        void init(moodycamel::ConcurrentQueue<std::string>* const _InputQueue,
+        ~NetworkManager();
+
+        bool init(moodycamel::ConcurrentQueue<std::string>* const _InputQueue,
                   moodycamel::ConcurrentQueue<std::string>* const _OutputQueue,
                   int _Port);
-        void onMessage(websocketpp::connection_hdl, ServerType::message_ptr _Msg);
+        bool stop();
 
     private:
 
-        void send()
-        {
-            while (true)
-            {
-                std::cout << "Sending messages" << std::endl;
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            }
-        }
+        void onMessage(websocketpp::connection_hdl, ServerType::message_ptr _Msg);
+        bool onValidate(websocketpp::connection_hdl);
+        void send();
 
         moodycamel::ConcurrentQueue<std::string>* InputQueue_;
         moodycamel::ConcurrentQueue<std::string>* OutputQueue_;
 
         ServerType Server_;
-        websocketpp::lib::shared_ptr<websocketpp::lib::thread> Thread_;
+        std::map<std::string, websocketpp::connection_hdl> Connections_;
+        std::mutex ConnectionsLock_;
+
         std::thread ThreadSender_;
+        std::thread ThreadServer_;
 };
 
 #endif // NETWORK_MANAGER_HPP

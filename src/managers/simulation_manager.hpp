@@ -13,6 +13,10 @@
 #include "velocity_component.hpp"
 #include "integrator_system.hpp"
 
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
+
 class SimulationManager
 {
 
@@ -20,42 +24,19 @@ class SimulationManager
 
         SimulationManager(entt::registry& _Reg) : Reg_(_Reg), SysIntegrator_(_Reg) {}
 
-        void init()
-        {
-            World_ = new b2World({0.0f, 0.0f});
-            World2_ = new b2World({0.0f, 0.0f});
-            std::cout << "Created Worlds" << std::endl;
-            e = Reg_.create();
-            Reg_.emplace<PositionComponent<double>>(e);
-            Reg_.emplace<VelocityComponent<double>>(e);
-            Reg_.emplace<AccelerationComponent<double>>(e, 1.0, 0.5);
-            Thread_ = std::thread(&SimulationManager::run, this);
-        }
+        void init(moodycamel::ConcurrentQueue<std::string>* const _InputQueue,
+                  moodycamel::ConcurrentQueue<std::string>* const _OutputQueue);
+
 
     private:
 
-        void run()
-        {
-            while (!ExitSimulation_)
-            {
-                World_->Step(1.0f/60.0f, 8, 3);
-                World2_->Step(1.0f/60.0f, 8, 3);
-                // World_->ShiftOrigin({20.0f, 10.0f});
-
-                SysIntegrator_.integrate(1.0/60.0);
-
-                auto& c = Reg_.get<PositionComponent<double>>(e);
-                std::cout << "Entity: " << std::uint32_t(e) << "; " << c.x << ", " << c.y << std::endl;
-
-                std::this_thread::sleep_for(std::chrono::milliseconds(16));
-            }
-            std::cout << "[Thread] Simulation exited." << std::endl;
-        }
+        void run();
 
         entt::registry& Reg_;
         IntegratorSystem SysIntegrator_;
 
-        entt::entity e;
+        moodycamel::ConcurrentQueue<std::string>* InputQueue_;
+        moodycamel::ConcurrentQueue<std::string>* OutputQueue_;
 
         b2World*    World_;
         b2World*    World2_;

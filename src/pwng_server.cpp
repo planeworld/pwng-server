@@ -63,8 +63,7 @@ int main(int argc, char* argv[])
         Reg.set<NetworkManager>();
         Reg.ctx<NetworkManager>().init(&InputQueue, &OutputQueue, Port);
         Reg.set<SimulationManager>(Reg);
-
-        Reg.ctx<SimulationManager>().init();
+        Reg.ctx<SimulationManager>().init(&InputQueue, &OutputQueue);
 
         bool IsRunning = true;
         while (IsRunning)
