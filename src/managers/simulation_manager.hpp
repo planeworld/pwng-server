@@ -24,9 +24,12 @@ class SimulationManager
 
         SimulationManager(entt::registry& _Reg) : Reg_(_Reg), SysIntegrator_(_Reg) {}
 
+        bool isRunning() const {return IsRunning_;}
+
         void init(moodycamel::ConcurrentQueue<std::string>* const _InputQueue,
                   moodycamel::ConcurrentQueue<std::string>* const _OutputQueue);
 
+        void stop();
 
     private:
 
@@ -41,7 +44,8 @@ class SimulationManager
         b2World*    World_;
         b2World*    World2_;
         std::thread Thread_;
-        bool        ExitSimulation_{false};
+
+        bool IsRunning_{true};
 };
 
 #endif // SIMULATION_MANAGER_HPP

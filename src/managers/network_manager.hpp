@@ -7,6 +7,7 @@
 #include <thread>
 
 #include <concurrentqueue/concurrentqueue.h>
+#include <entt/entity/registry.hpp>
 
 #define ASIO_STANDALONE
 #include <websocketpp/common/thread.hpp>
@@ -20,7 +21,9 @@ class NetworkManager
 
         typedef websocketpp::server<websocketpp::config::asio> ServerType;
 
-        ~NetworkManager();
+        NetworkManager(entt::registry& _Reg) : Reg_(_Reg) {}
+
+        bool isRunning() const {return IsRunning_;}
 
         bool init(moodycamel::ConcurrentQueue<std::string>* const _InputQueue,
                   moodycamel::ConcurrentQueue<std::string>* const _OutputQueue,
@@ -33,6 +36,8 @@ class NetworkManager
         bool onValidate(websocketpp::connection_hdl);
         void send();
 
+        entt::registry& Reg_;
+
         moodycamel::ConcurrentQueue<std::string>* InputQueue_;
         moodycamel::ConcurrentQueue<std::string>* OutputQueue_;
 
@@ -42,6 +47,8 @@ class NetworkManager
 
         std::thread ThreadSender_;
         std::thread ThreadServer_;
+
+        bool IsRunning_{true};
 };
 
 #endif // NETWORK_MANAGER_HPP

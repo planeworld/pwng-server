@@ -1,17 +1,23 @@
 #include <iostream>
+#include <sstream>
 
 #include <argagg/argagg.hpp>
-#include <entt/entity/registry.hpp>
 #include <concurrentqueue/concurrentqueue.h>
+#include <entt/entity/registry.hpp>
+#include <nlohmann/json.hpp>
 
+#include "error_handler.hpp"
+#include "message_handler.hpp"
 #include "network_manager.hpp"
 #include "position_component.hpp"
 #include "simulation_manager.hpp"
 #include "velocity_component.hpp"
 
+using json = nlohmann::json;
+
 constexpr int PWNG_ABORT_STARTUP = -1;
 
-int parseArguments(int argc, char* argv[])
+int parseArguments(int argc, char* argv[], entt::registry& _Reg)
 {
     argagg::parser ArgParser
         {{
@@ -28,12 +34,15 @@ int parseArguments(int argc, char* argv[])
     }
     catch (const std::exception& e)
     {
-        std::cerr << e.what() << '\n';
+        _Reg.ctx<ErrorHandler>().report("Couldn't parse command line arguments, error: "+
+                                        std::string(e.what()));
         return PWNG_ABORT_STARTUP;
     }
     if (Args["help"])
     {
-        std::cerr << ArgParser;
+        std::stringstream Message;
+        Message << ArgParser;
+        _Reg.ctx<MessageHandler>().report(Message.str(), MessageHandler::INFO);
         return PWNG_ABORT_STARTUP;
     }
 
@@ -48,10 +57,23 @@ int parseArguments(int argc, char* argv[])
 
 int main(int argc, char* argv[])
 {
-    int Port = parseArguments(argc, argv);
+    entt::registry Reg;
+
+    Reg.set<ErrorHandler>();
+    Reg.set<MessageHandler>();
+    Reg.set<NetworkManager>(Reg);
+    Reg.set<SimulationManager>(Reg);
+
+    auto& Errors = Reg.ctx<ErrorHandler>();
+    auto& Messages = Reg.ctx<MessageHandler>();
+    auto& Network = Reg.ctx<NetworkManager>();
+    auto& Simulation = Reg.ctx<SimulationManager>();
+
+    Messages.setLevel(MessageHandler::DEBUG_L3);
+
+    int Port = parseArguments(argc, argv, Reg);
     if (Port != PWNG_ABORT_STARTUP)
     {
-        entt::registry Reg;
 
         auto IntegratorGroup = Reg.group<PositionComponent<double>,
                                          VelocityComponent<double>,
@@ -60,20 +82,32 @@ int main(int argc, char* argv[])
         moodycamel::ConcurrentQueue<std::string> InputQueue;
         moodycamel::ConcurrentQueue<std::string> OutputQueue;
 
-        Reg.set<NetworkManager>();
-        Reg.ctx<NetworkManager>().init(&InputQueue, &OutputQueue, Port);
-        Reg.set<SimulationManager>(Reg);
-        Reg.ctx<SimulationManager>().init(&InputQueue, &OutputQueue);
+        Network.init(&InputQueue, &OutputQueue, Port);
+        Simulation.init(&InputQueue, &OutputQueue);
 
-        bool IsRunning = true;
-        while (IsRunning)
+        while (Network.isRunning() || Simulation.isRunning())
+
         {
             std::string Message;
             bool NewMessageFound = InputQueue.try_dequeue(Message);
             if (NewMessageFound)
-                std::cout << Message << std::endl;
+            {
+                DBLK(Messages.report("Incoming Message: \n" + Message, MessageHandler::DEBUG_L1);)
+
+                json j = json::parse(Message);
+
+                if (j["Message"] == "stop")
+                {
+                    Network.stop();
+                    Simulation.stop();
+                }
+
+            }
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
+
+        Messages.report("Exit program");
+
         return EXIT_SUCCESS;
     }
     else

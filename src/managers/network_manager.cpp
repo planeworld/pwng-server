@@ -1,11 +1,7 @@
 #include "network_manager.hpp"
 
-#include <nlohmann/json.hpp>
-
-NetworkManager::~NetworkManager()
-{
-    this->stop();
-}
+#include "error_handler.hpp"
+#include "message_handler.hpp"
 
 bool NetworkManager::init(moodycamel::ConcurrentQueue<std::string>* const _InputQueue,
                           moodycamel::ConcurrentQueue<std::string>* const _OutputQueue,
@@ -13,6 +9,8 @@ bool NetworkManager::init(moodycamel::ConcurrentQueue<std::string>* const _Input
 {
     InputQueue_ = _InputQueue;
     OutputQueue_ = _OutputQueue;
+
+    auto& Errors = Reg_.ctx<ErrorHandler>();
 
     Server_.clear_access_channels(websocketpp::log::alevel::all);
     Server_.clear_error_channels(websocketpp::log::elevel::all);
@@ -29,7 +27,7 @@ bool NetworkManager::init(moodycamel::ConcurrentQueue<std::string>* const _Input
     }
     catch (const websocketpp::exception& e)
     {
-        std::cerr << "Couldn't listen to port " << _Port << std::endl;
+        Errors.report("Couldn't listen to port " + std::to_string(_Port));
         return false;
     }
 
@@ -37,6 +35,7 @@ bool NetworkManager::init(moodycamel::ConcurrentQueue<std::string>* const _Input
     Server_.start_accept(ErrorCode);
     if (ErrorCode)
     {
+        Errors.report("Couldn't start server, message: " + ErrorCode.message());
         std::cerr << ErrorCode.message() << std::endl;
     }
 
@@ -53,23 +52,16 @@ void NetworkManager::onMessage(websocketpp::connection_hdl _Connection, ServerTy
 
 bool NetworkManager::onValidate(websocketpp::connection_hdl _Connection)
 {
+    auto& Messages = Reg_.ctx<MessageHandler>();
+
     websocketpp::server<websocketpp::config::asio>::connection_ptr
         Connection = Server_.get_con_from_hdl(_Connection);
     websocketpp::uri_ptr Uri = Connection->get_uri();
 
-    std::string Query = Uri->get_query();
+    DBLK(Messages.report("Query string: " + Uri->get_query(), MessageHandler::DEBUG_L1);)
 
-    std::cout << "Query: " << Query << std::endl;
-    // if (!query.empty()) {
-    //     // Split the query parameter string here, if desired.
-    //     // We assume we extracted a string called 'id' here.
-    // }
-    // else {
-    //     // Reject if no query parameter provided, for example.
-    //     return false;
-    // }
     std::string ID = "1";
-    std::cout << "Connection validated" << std::endl;
+    Messages.report("Connection validated");
     std::lock_guard<std::mutex> Lock(ConnectionsLock_);
     Connections_.insert({ID, _Connection});
 
@@ -78,7 +70,9 @@ bool NetworkManager::onValidate(websocketpp::connection_hdl _Connection)
 
 void NetworkManager::send()
 {
-    while (true)
+    auto& Messages = Reg_.ctx<MessageHandler>();
+
+    while (IsRunning_)
     {
         std::string Message;
         while (OutputQueue_->try_dequeue(Message))
@@ -93,42 +87,55 @@ void NetworkManager::send()
                 Server_.send(Connection, Message, websocketpp::frame::opcode::text, ErrorCode);
                 if (ErrorCode)
                 {
-                    std::cerr << ErrorCode.message() << std::endl;
+                    Reg_.ctx<ErrorHandler>().report("Sending failed: " + ErrorCode.message());
                 }
             }
             else
             {
-                std::cout << "Socket unknown, message dropped" << std::endl;
+                // std::cout << "Socket unknown, message dropped" << std::endl;
             }
 
             // std::cout << Message << std::endl;
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
+    DBLK(Messages.report("Sender thread stopped successfully", MessageHandler::DEBUG_L1);)
 }
 
 bool NetworkManager::stop()
 {
+    auto& Errors = Reg_.ctx<ErrorHandler>();
+    auto& Messages = Reg_.ctx<MessageHandler>();
+
+    Messages.report("Stopping server");
+
     websocketpp::lib::error_code ErrorCode;
     Server_.stop_listening(ErrorCode);
     if (ErrorCode)
     {
-        std::cerr << ErrorCode.message() << std::endl;
+        Errors.report("Stopping server failed: " + ErrorCode.message());
         return false;
     }
 
-    // Close all existing websocket connections.
-    // std::string data = "Terminating connection...";
-    // map<string, connection_hdl>::iterator it;
-    // for (it = websockets.begin(); it != websockets.end(); ++it) {
-    //     websocketpp::lib::error_code ec;
-    //     server.close(it->second, websocketpp::close::status::normal, data, ec); // send text message.
-    //     if (ec) { // we got an error
-    //         // Error closing websocket. Log reason using ec.message().
-    //     }
-    // }
+    std::map<std::string, websocketpp::connection_hdl>::iterator it;
+    for (it = Connections_.begin(); it != Connections_.end(); ++it)
+    {
+        websocketpp::lib::error_code ErrorCode;
+        Server_.close(it->second, websocketpp::close::status::normal,
+                      "Server shutting down, closing connection.", ErrorCode);
+        if (ErrorCode)
+        {
+            Errors.report("Closing connection failed: " + ErrorCode.message());
+        }
+    }
 
     Server_.stop();
-    std::cout << "Server stopped" << std::endl;
+    IsRunning_ = false;
+
+    ThreadServer_.join();
+    ThreadSender_.join();
+
+    Messages.report("Server stopped");
+
     return true;
 }
