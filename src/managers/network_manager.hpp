@@ -32,9 +32,10 @@ class NetworkManager
 
     private:
 
+        void onClose(websocketpp::connection_hdl);
         void onMessage(websocketpp::connection_hdl, ServerType::message_ptr _Msg);
         bool onValidate(websocketpp::connection_hdl);
-        void send();
+        void run();
 
         entt::registry& Reg_;
 

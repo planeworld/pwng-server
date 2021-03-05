@@ -15,6 +15,8 @@ bool NetworkManager::init(moodycamel::ConcurrentQueue<std::string>* const _Input
     Server_.clear_access_channels(websocketpp::log::alevel::all);
     Server_.clear_error_channels(websocketpp::log::elevel::all);
 
+    Server_.set_close_handler(std::bind(&NetworkManager::onClose, this,
+                              std::placeholders::_1));
     Server_.set_message_handler(std::bind(&NetworkManager::onMessage, this,
                                 std::placeholders::_1, std::placeholders::_2));
     Server_.set_validate_handler(std::bind(&NetworkManager::onValidate, this,
@@ -40,9 +42,19 @@ bool NetworkManager::init(moodycamel::ConcurrentQueue<std::string>* const _Input
     }
 
     ThreadServer_ = std::thread(std::bind(&ServerType::run, &Server_));
-    ThreadSender_ = std::thread(&NetworkManager::send, this);
+    ThreadSender_ = std::thread(&NetworkManager::run, this);
 
     return true;
+}
+
+void NetworkManager::onClose(websocketpp::connection_hdl _Connection)
+{
+    auto& Messages = Reg_.ctx<MessageHandler>();
+
+    std::lock_guard<std::mutex> Lock(ConnectionsLock_);
+    Connections_.erase("1");
+
+    Messages.report("Connection to client closed");
 }
 
 void NetworkManager::onMessage(websocketpp::connection_hdl _Connection, ServerType::message_ptr _Msg)
@@ -68,7 +80,7 @@ bool NetworkManager::onValidate(websocketpp::connection_hdl _Connection)
     return true;
 }
 
-void NetworkManager::send()
+void NetworkManager::run()
 {
     auto& Messages = Reg_.ctx<MessageHandler>();
 
