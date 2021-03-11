@@ -27,12 +27,12 @@ class MessageHandler
             DEBUG_L3 = 3
         } ReportLevelType;
         
-        void report(const std::string& _Message, const ReportLevelType _Level = INFO)
+        void report(const std::string& _Source, const std::string& _Message, const ReportLevelType _Level = INFO)
         {
             if (_Level == INFO)
             {
                 std::stringstream Message;
-                Message << "[i] " << _Message;
+                Message << "[ I  ][ " << _Source << " ] " <<  _Message;
                 std::cout << Message.str() << std::endl;
             }
             else
@@ -40,7 +40,7 @@ class MessageHandler
                 if (_Level <= Level_)
                 {
                     std::stringstream Message;
-                    Message << "[d] " << _Message;
+                    Message << "[ D" << _Level << " ][ " << _Source << " ] " << _Message;
                     std::cout << Message.str() << std::endl;
                 }
             }

@@ -3,6 +3,7 @@
 
 #include <map>
 #include <mutex>
+#include <sstream>
 #include <string>
 #include <thread>
 
@@ -10,7 +11,6 @@
 #include <entt/entity/registry.hpp>
 
 #define ASIO_STANDALONE
-#include <websocketpp/common/thread.hpp>
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
 
@@ -38,6 +38,9 @@ class NetworkManager
         void run();
 
         entt::registry& Reg_;
+
+        std::ostringstream ErrorStream_;
+        std::ostringstream MessageStream_;
 
         moodycamel::ConcurrentQueue<std::string>* InputQueue_;
         moodycamel::ConcurrentQueue<std::string>* OutputQueue_;

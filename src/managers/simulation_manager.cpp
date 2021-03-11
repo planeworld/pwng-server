@@ -7,6 +7,10 @@
 void SimulationManager::init(moodycamel::ConcurrentQueue<std::string>* const _InputQueue,
                              moodycamel::ConcurrentQueue<std::string>* const _OutputQueue)
 {
+    auto& Messages = Reg_.ctx<MessageHandler>();
+
+    Messages.report("SIM", "Initialising Simulation Manager");
+
     InputQueue_ = _InputQueue;
     OutputQueue_ = _OutputQueue;
 
@@ -30,12 +34,14 @@ void SimulationManager::stop()
 
     IsRunning_ = false;
     Thread_.join();
-    Messages.report("Simulation stopped");
+    Messages.report("SIM","Simulation stopped");
 }
 
 void SimulationManager::run()
 {
     auto& Messages = Reg_.ctx<MessageHandler>();
+
+    Messages.report("SIM", "Simulation Manager running");
 
     while (IsRunning_)
     {
@@ -63,5 +69,5 @@ void SimulationManager::run()
         std::this_thread::sleep_for(std::chrono::milliseconds(16));
     }
 
-    Messages.report("Simulation thread stopped successfully");
+    Messages.report("SIM", "Simulation thread stopped successfully");
 }

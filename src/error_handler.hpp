@@ -16,12 +16,12 @@ class ErrorHandler
             return ErrorFlag.exchange(false);
         }
         
-        void report(const std::string& _Message)
+        void report(const std::string& _Source, const std::string& _Message)
         {
             // std::cerr is thread safe, but messages could be mangled
             // Therefore, the message is formed before dispatching
             std::stringstream Message;
-            Message << "[e] " << _Message;
+            Message << "[ E  ][ " << _Source << " ] " << _Message;
             std::cerr << Message.str() << std::endl;
             ErrorFlag = true;
         }

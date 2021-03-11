@@ -34,7 +34,7 @@ int parseArguments(int argc, char* argv[], entt::registry& _Reg)
     }
     catch (const std::exception& e)
     {
-        _Reg.ctx<ErrorHandler>().report("Couldn't parse command line arguments, error: "+
+        _Reg.ctx<ErrorHandler>().report("PRG", "Couldn't parse command line arguments, error: "+
                                         std::string(e.what()));
         return PWNG_ABORT_STARTUP;
     }
@@ -42,7 +42,7 @@ int parseArguments(int argc, char* argv[], entt::registry& _Reg)
     {
         std::stringstream Message;
         Message << ArgParser;
-        _Reg.ctx<MessageHandler>().report(Message.str(), MessageHandler::INFO);
+        _Reg.ctx<MessageHandler>().report("PRG", Message.str(), MessageHandler::INFO);
         return PWNG_ABORT_STARTUP;
     }
 
@@ -92,7 +92,7 @@ int main(int argc, char* argv[])
             bool NewMessageFound = InputQueue.try_dequeue(Message);
             if (NewMessageFound)
             {
-                DBLK(Messages.report("Incoming Message: \n" + Message, MessageHandler::DEBUG_L1);)
+                DBLK(Messages.report("PRG", "Incoming Message: \n" + Message, MessageHandler::DEBUG_L1);)
 
                 json j = json::parse(Message);
 
@@ -106,7 +106,7 @@ int main(int argc, char* argv[])
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
 
-        Messages.report("Exit program");
+        Messages.report("PRG", "Exit program");
 
         return EXIT_SUCCESS;
     }
