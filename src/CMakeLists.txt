@@ -8,7 +8,6 @@ set(HEADERS
   managers/network_manager.hpp
   managers/simulation_manager.hpp
   systems/integrator_system.hpp
-  error_handler.hpp
   message_handler.hpp
 )
 

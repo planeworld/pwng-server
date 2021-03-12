@@ -6,7 +6,6 @@
 #include <entt/entity/registry.hpp>
 #include <nlohmann/json.hpp>
 
-#include "error_handler.hpp"
 #include "message_handler.hpp"
 #include "network_manager.hpp"
 #include "position_component.hpp"
@@ -34,15 +33,15 @@ int parseArguments(int argc, char* argv[], entt::registry& _Reg)
     }
     catch (const std::exception& e)
     {
-        _Reg.ctx<ErrorHandler>().report("PRG", "Couldn't parse command line arguments, error: "+
-                                        std::string(e.what()));
+        _Reg.ctx<MessageHandler>().report("prg", "Couldn't parse command line arguments, error: "+
+                                           std::string(e.what()));
         return PWNG_ABORT_STARTUP;
     }
     if (Args["help"])
     {
         std::stringstream Message;
         Message << ArgParser;
-        _Reg.ctx<MessageHandler>().report("PRG", Message.str(), MessageHandler::INFO);
+        _Reg.ctx<MessageHandler>().report("prg", Message.str(), MessageHandler::INFO);
         return PWNG_ABORT_STARTUP;
     }
 
@@ -59,16 +58,18 @@ int main(int argc, char* argv[])
 {
     entt::registry Reg;
 
-    Reg.set<ErrorHandler>();
     Reg.set<MessageHandler>();
     Reg.set<NetworkManager>(Reg);
     Reg.set<SimulationManager>(Reg);
 
-    auto& Errors = Reg.ctx<ErrorHandler>();
     auto& Messages = Reg.ctx<MessageHandler>();
     auto& Network = Reg.ctx<NetworkManager>();
     auto& Simulation = Reg.ctx<SimulationManager>();
 
+    Messages.registerSource("net", "net");
+    Messages.registerSource("prg", "prg");
+    Messages.registerSource("sim", "sim");
+    Messages.setColored(true);
     Messages.setLevel(MessageHandler::DEBUG_L3);
 
     int Port = parseArguments(argc, argv, Reg);
@@ -92,7 +93,7 @@ int main(int argc, char* argv[])
             bool NewMessageFound = InputQueue.try_dequeue(Message);
             if (NewMessageFound)
             {
-                DBLK(Messages.report("PRG", "Incoming Message: \n" + Message, MessageHandler::DEBUG_L1);)
+                DBLK(Messages.report("prg", "Incoming Message: \n" + Message, MessageHandler::DEBUG_L1);)
 
                 json j = json::parse(Message);
 
@@ -106,7 +107,7 @@ int main(int argc, char* argv[])
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
 
-        Messages.report("PRG", "Exit program");
+        Messages.report("prg", "Exit program", MessageHandler::INFO);
 
         return EXIT_SUCCESS;
     }

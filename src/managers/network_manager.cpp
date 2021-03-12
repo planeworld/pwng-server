@@ -1,21 +1,21 @@
 #include "network_manager.hpp"
 
-#include "error_handler.hpp"
 #include "message_handler.hpp"
 
 bool NetworkManager::init(moodycamel::ConcurrentQueue<std::string>* const _InputQueue,
                           moodycamel::ConcurrentQueue<std::string>* const _OutputQueue,
                           int _Port)
 {
-    auto& Errors = Reg_.ctx<ErrorHandler>();
     auto& Messages = Reg_.ctx<MessageHandler>();
 
-    Messages.report("NET", "Initialising Network Manager");
+    Messages.report("net", "Initialising Network Manager", MessageHandler::INFO);
 
     InputQueue_ = _InputQueue;
     OutputQueue_ = _OutputQueue;
 
-    Server_.clear_access_channels(websocketpp::log::alevel::all);
+    Server_.set_access_channels(websocketpp::log::alevel::all);
+    Server_.clear_access_channels(websocketpp::log::alevel::frame_header);
+    Server_.clear_access_channels(websocketpp::log::alevel::frame_payload);
     Server_.set_error_channels(websocketpp::log::elevel::all);
     Server_.get_elog().set_ostream(&ErrorStream_);
     Server_.get_alog().set_ostream(&MessageStream_);
@@ -30,11 +30,11 @@ bool NetworkManager::init(moodycamel::ConcurrentQueue<std::string>* const _Input
     try
     {
         Server_.listen(_Port);
-        Messages.report("NET", "Server listening on port " + std::to_string(_Port));
+        Messages.report("net", "Server listening on port " + std::to_string(_Port), MessageHandler::INFO);
     }
     catch (const websocketpp::exception& e)
     {
-        Errors.report("NET", "Couldn't listen to port " + std::to_string(_Port));
+        Messages.report("net", "Couldn't listen to port " + std::to_string(_Port));
         return false;
     }
 
@@ -42,7 +42,7 @@ bool NetworkManager::init(moodycamel::ConcurrentQueue<std::string>* const _Input
     Server_.start_accept(ErrorCode);
     if (ErrorCode)
     {
-        Errors.report("NET", "Couldn't start server: " + ErrorCode.message());
+        Messages.report("net", "Couldn't start server: " + ErrorCode.message());
         std::cerr << ErrorCode.message() << std::endl;
     }
 
@@ -59,15 +59,15 @@ void NetworkManager::onClose(websocketpp::connection_hdl _Connection)
     std::lock_guard<std::mutex> Lock(ConnectionsLock_);
     Connections_.erase("1");
 
-    Messages.report("NET", "Connection to client closed");
+    Messages.report("net", "Connection to client closed", MessageHandler::INFO);
 }
 
 void NetworkManager::onMessage(websocketpp::connection_hdl _Connection, ServerType::message_ptr _Msg)
 {
     auto& Messages = Reg_.ctx<MessageHandler>();
 
-    DBLK(Messages.report("NET", "Incoming message enqueued", MessageHandler::DEBUG_L2);)
-    DBLK(Messages.report("NET", "Content: " + _Msg->get_payload(), MessageHandler::DEBUG_L3);)
+    DBLK(Messages.report("net", "Incoming message enqueued", MessageHandler::DEBUG_L2);)
+    DBLK(Messages.report("net", "Content: " + _Msg->get_payload(), MessageHandler::DEBUG_L3);)
     InputQueue_->enqueue(_Msg->get_payload());
 }
 
@@ -79,10 +79,10 @@ bool NetworkManager::onValidate(websocketpp::connection_hdl _Connection)
         Connection = Server_.get_con_from_hdl(_Connection);
     websocketpp::uri_ptr Uri = Connection->get_uri();
 
-    DBLK(Messages.report("NET", "Query string: " + Uri->get_query(), MessageHandler::DEBUG_L1);)
+    DBLK(Messages.report("net", "Query string: " + Uri->get_query(), MessageHandler::DEBUG_L1);)
 
     std::string ID = "1";
-    Messages.report("NET", "Connection validated");
+    Messages.report("net", "Connection validated", MessageHandler::INFO);
     std::lock_guard<std::mutex> Lock(ConnectionsLock_);
     Connections_.insert({ID, _Connection});
 
@@ -91,10 +91,9 @@ bool NetworkManager::onValidate(websocketpp::connection_hdl _Connection)
 
 void NetworkManager::run()
 {
-    auto& Errors = Reg_.ctx<ErrorHandler>();
     auto& Messages = Reg_.ctx<MessageHandler>();
 
-    Messages.report("NET", "Network Manager running");
+    Messages.report("net", "Network Manager running", MessageHandler::INFO);
 
     while (IsRunning_)
     {
@@ -109,14 +108,14 @@ void NetworkManager::run()
             // includes a std::endl. Otherwise, it would result
             // in an empty line
             ErrorStreamContent.pop_back();
-            Errors.report("NET", "Websocket++: "+ErrorStreamContent);
+            Messages.report("net", "Websocket++: "+ErrorStreamContent);
             ErrorStream_.str({});
         }
         std::string MessageStreamContent{MessageStream_.str()};
         if (!MessageStreamContent.empty())
         {
             MessageStreamContent.pop_back();
-            Messages.report("NET", "Websocket++: "+MessageStreamContent);
+            Messages.report("net", "Websocket++: "+MessageStreamContent, MessageHandler::INFO);
             MessageStream_.str({});
         }
 
@@ -134,7 +133,7 @@ void NetworkManager::run()
                 Server_.send(Connection, Message, websocketpp::frame::opcode::text, ErrorCode);
                 if (ErrorCode)
                 {
-                    Errors.report("NET", "Sending failed: " + ErrorCode.message());
+                    Messages.report("net", "Sending failed: " + ErrorCode.message());
                 }
             }
             else
@@ -146,21 +145,20 @@ void NetworkManager::run()
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
-    DBLK(Messages.report("NET", "Sender thread stopped successfully", MessageHandler::DEBUG_L1);)
+    DBLK(Messages.report("net", "Sender thread stopped successfully", MessageHandler::DEBUG_L1);)
 }
 
 bool NetworkManager::stop()
 {
-    auto& Errors = Reg_.ctx<ErrorHandler>();
     auto& Messages = Reg_.ctx<MessageHandler>();
 
-    Messages.report("NET", "Stopping server");
+    Messages.report("net", "Stopping server", MessageHandler::INFO);
 
     websocketpp::lib::error_code ErrorCode;
     Server_.stop_listening(ErrorCode);
     if (ErrorCode)
     {
-        Errors.report("NET", "Stopping server failed: " + ErrorCode.message());
+        Messages.report("net", "Stopping server failed: " + ErrorCode.message());
         return false;
     }
 
@@ -172,7 +170,7 @@ bool NetworkManager::stop()
                       "Server shutting down, closing connection.", ErrorCode);
         if (ErrorCode)
         {
-            Errors.report("NET", "Closing connection failed: " + ErrorCode.message());
+            Messages.report("net", "Closing connection failed: " + ErrorCode.message());
         }
     }
 
@@ -182,7 +180,7 @@ bool NetworkManager::stop()
     ThreadServer_.join();
     ThreadSender_.join();
 
-    Messages.report("NET", "Server stopped");
+    Messages.report("net", "Server stopped", MessageHandler::INFO);
 
     return true;
 }
