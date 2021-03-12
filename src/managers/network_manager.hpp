@@ -39,8 +39,8 @@ class NetworkManager
 
         entt::registry& Reg_;
 
-        std::ostringstream ErrorStream_;
-        std::ostringstream MessageStream_;
+        std::stringstream ErrorStream_;
+        std::stringstream MessageStream_;
 
         moodycamel::ConcurrentQueue<std::string>* InputQueue_;
         moodycamel::ConcurrentQueue<std::string>* OutputQueue_;

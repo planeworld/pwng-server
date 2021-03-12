@@ -101,24 +101,27 @@ void NetworkManager::run()
         // websocketpp.
         // Since output is transferred to a (string-)stream,
         // it's content is frequently checked
-        std::string ErrorStreamContent{ErrorStream_.str()};
-        if (!ErrorStreamContent.empty())
+        if (!ErrorStream_.str().empty())
         {
-            // First, remove the carriage return, since report
-            // includes a std::endl. Otherwise, it would result
-            // in an empty line
-            ErrorStreamContent.pop_back();
-            Messages.report("net", "Websocket++: "+ErrorStreamContent);
+            // Extract line by line in case of multiple messages
+            std::string Line;
+            while (std::getline(ErrorStream_, Line, '\n'))
+            {
+                Messages.report("net", "Websocket++: "+Line);
+            }
             ErrorStream_.str({});
         }
-        std::string MessageStreamContent{MessageStream_.str()};
-        if (!MessageStreamContent.empty())
-        {
-            MessageStreamContent.pop_back();
-            Messages.report("net", "Websocket++: "+MessageStreamContent, MessageHandler::INFO);
-            MessageStream_.str({});
-        }
-
+        DBLK(
+            if (!MessageStream_.str().empty())
+            {
+                std::string Line;
+                while(std::getline(MessageStream_, Line, '\n'))
+                {
+                    Messages.report("net", "Websocket++: "+Line, MessageHandler::DEBUG_L1);
+                }
+                MessageStream_.str({});
+            }
+        )
 
         std::string Message;
         while (OutputQueue_->try_dequeue(Message))

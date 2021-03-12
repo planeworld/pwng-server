@@ -83,28 +83,32 @@ int main(int argc, char* argv[])
         moodycamel::ConcurrentQueue<std::string> InputQueue;
         moodycamel::ConcurrentQueue<std::string> OutputQueue;
 
-        Network.init(&InputQueue, &OutputQueue, Port);
-        Simulation.init(&InputQueue, &OutputQueue);
-
-        while (Network.isRunning() || Simulation.isRunning())
-
+        if (Network.init(&InputQueue, &OutputQueue, Port))
         {
-            std::string Message;
-            bool NewMessageFound = InputQueue.try_dequeue(Message);
-            if (NewMessageFound)
+
+            Simulation.init(&InputQueue, &OutputQueue);
+
+            while (Network.isRunning() || Simulation.isRunning())
+
             {
-                DBLK(Messages.report("prg", "Incoming Message: \n" + Message, MessageHandler::DEBUG_L1);)
-
-                json j = json::parse(Message);
-
-                if (j["Message"] == "stop")
+                std::string Message;
+                bool NewMessageFound = InputQueue.try_dequeue(Message);
+                if (NewMessageFound)
                 {
-                    Network.stop();
-                    Simulation.stop();
-                }
+                    DBLK(Messages.report("prg", "Incoming Message: \n" + Message, MessageHandler::DEBUG_L1);)
 
+                    json j = json::parse(Message);
+
+                    if (j["Message"] == "stop")
+                    {
+                        Network.stop();
+                        Simulation.stop();
+                    }
+
+                }
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
             }
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
         }
 
         Messages.report("prg", "Exit program", MessageHandler::INFO);
