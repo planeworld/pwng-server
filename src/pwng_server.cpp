@@ -92,8 +92,7 @@ int main(int argc, char* argv[])
 
             {
                 std::string Message;
-                bool NewMessageFound = InputQueue.try_dequeue(Message);
-                if (NewMessageFound)
+                while (InputQueue.try_dequeue(Message))
                 {
                     DBLK(Messages.report("prg", "Incoming Message: \n" + Message, MessageHandler::DEBUG_L1);)
 

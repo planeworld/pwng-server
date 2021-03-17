@@ -60,6 +60,7 @@ void NetworkManager::onClose(websocketpp::connection_hdl _Connection)
     Connections_.erase("1");
 
     Messages.report("net", "Connection to client closed", MessageHandler::INFO);
+    DBLK(Messages.report("net", std::to_string(Connections_.size())+ " open connections.", MessageHandler::DEBUG_L2);)
 }
 
 void NetworkManager::onMessage(websocketpp::connection_hdl _Connection, ServerType::message_ptr _Msg)
@@ -85,6 +86,8 @@ bool NetworkManager::onValidate(websocketpp::connection_hdl _Connection)
     Messages.report("net", "Connection validated", MessageHandler::INFO);
     std::lock_guard<std::mutex> Lock(ConnectionsLock_);
     Connections_.insert({ID, _Connection});
+
+    DBLK(Messages.report("net", std::to_string(Connections_.size())+ " open connection(s).", MessageHandler::DEBUG_L2);)
 
     return true;
 }
