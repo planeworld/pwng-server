@@ -67,8 +67,7 @@ void NetworkManager::onMessage(websocketpp::connection_hdl _Connection, ServerTy
 {
     auto& Messages = Reg_.ctx<MessageHandler>();
 
-    DBLK(Messages.report("net", "Incoming message enqueued", MessageHandler::DEBUG_L2);)
-    DBLK(Messages.report("net", "Content: " + _Msg->get_payload(), MessageHandler::DEBUG_L3);)
+    DBLK(Messages.report("net", "Enqueueing incoming message:\n"+_Msg->get_payload(), MessageHandler::DEBUG_L3);)
     InputQueue_->enqueue(_Msg->get_payload());
 }
 

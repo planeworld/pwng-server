@@ -94,15 +94,38 @@ int main(int argc, char* argv[])
                 std::string Message;
                 while (InputQueue.try_dequeue(Message))
                 {
-                    DBLK(Messages.report("prg", "Incoming Message: \n" + Message, MessageHandler::DEBUG_L1);)
+                    DBLK(Messages.report("prg", "Dequeueing incoming message:\n"+Message, MessageHandler::DEBUG_L3);)
 
                     json j = json::parse(Message);
 
-                    if (j["Message"] == "stop")
+                    if (j["params"]["Message"] == "stop_simulation")
                     {
-                        Network.stop();
+                        Messages.report("prg", "Simulation stop requested", MessageHandler::INFO);
+                        json Result =
+                        {
+                            {"jsonrpc", "2.0"},
+                            {"result", "success"},
+                            {"id", j["id"]}
+                        };
+                        OutputQueue.enqueue(Result.dump(4));
                         Simulation.stop();
                     }
+                    if (j["params"]["Message"] == "shutdown")
+                    {
+                        Messages.report("prg", "Server shutdown requested", MessageHandler::INFO);
+                        json Result =
+                        {
+                            {"jsonrpc", "2.0"},
+                            {"result", "success"},
+                            {"id", j["id"]}
+                        };
+                        Simulation.stop();
+                        OutputQueue.enqueue(Result.dump(4));
+                        Messages.report("prg", "Shutting down...", MessageHandler::INFO);
+                        std::this_thread::sleep_for(std::chrono::seconds(2));
+                        Network.stop();
+                    }
+
 
                 }
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));

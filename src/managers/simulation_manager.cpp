@@ -25,16 +25,19 @@ void SimulationManager::init(moodycamel::ConcurrentQueue<std::string>* const _In
 
 void SimulationManager::stop()
 {
-    auto& Messages = Reg_.ctx<MessageHandler>();
+    if (IsRunning_)
+    {
+        auto& Messages = Reg_.ctx<MessageHandler>();
 
-    auto view = Reg_.view<PositionComponent<double>,
-                          VelocityComponent<double>,
-                          AccelerationComponent<double>>();
-    Reg_.destroy(view.begin(), view.end());
+        auto view = Reg_.view<PositionComponent<double>,
+                              VelocityComponent<double>,
+                              AccelerationComponent<double>>();
+        Reg_.destroy(view.begin(), view.end());
 
-    IsRunning_ = false;
-    Thread_.join();
-    Messages.report("sim","Simulation stopped", MessageHandler::INFO);
+        IsRunning_ = false;
+        Thread_.join();
+        Messages.report("sim","Simulation stopped", MessageHandler::INFO);
+    }
 }
 
 void SimulationManager::run()
@@ -58,10 +61,13 @@ void SimulationManager::run()
             {
                 json j =
                 {
-                    {"id", std::uint32_t(_e)},
-                    {"ax", _a.x}, {"ay", _a.y},
-                    {"vx", _v.x}, {"vy", _v.y},
-                    {"px", _p.x}, {"py", _p.y},
+                    {"jsonrpc", "2.0"},
+                    {"method", "sim_broadcast"},
+                    {"params",
+                     {{"eid", std::uint32_t(_e)},
+                      {"ax", _a.x}, {"ay", _a.y},
+                      {"vx", _v.x}, {"vy", _v.y},
+                      {"px", _p.x}, {"py", _p.y}}}
                 };
                 OutputQueue_->enqueue(j.dump(4));
             });
