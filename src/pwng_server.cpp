@@ -98,6 +98,18 @@ int main(int argc, char* argv[])
 
                     json j = json::parse(Message);
 
+                    if (j["params"]["Message"] == "start_simulation")
+                    {
+                        Messages.report("prg", "Simulation start requested", MessageHandler::INFO);
+                        json Result =
+                        {
+                            {"jsonrpc", "2.0"},
+                            {"result", "success"},
+                            {"id", j["id"]}
+                        };
+                        OutputQueue.enqueue(Result.dump(4));
+                        Simulation.start();
+                    }
                     if (j["params"]["Message"] == "stop_simulation")
                     {
                         Messages.report("prg", "Simulation stop requested", MessageHandler::INFO);

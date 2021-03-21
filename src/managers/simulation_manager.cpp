@@ -4,6 +4,14 @@
 
 #include "message_handler.hpp"
 
+SimulationManager::~SimulationManager()
+{
+    auto view = Reg_.view<PositionComponent<double>,
+                            VelocityComponent<double>,
+                            AccelerationComponent<double>>();
+    Reg_.destroy(view.begin(), view.end());
+}
+
 void SimulationManager::init(moodycamel::ConcurrentQueue<std::string>* const _InputQueue,
                              moodycamel::ConcurrentQueue<std::string>* const _OutputQueue)
 {
@@ -20,7 +28,19 @@ void SimulationManager::init(moodycamel::ConcurrentQueue<std::string>* const _In
     Reg_.emplace<PositionComponent<double>>(e);
     Reg_.emplace<VelocityComponent<double>>(e);
     Reg_.emplace<AccelerationComponent<double>>(e, 1.0, 0.5);
-    Thread_ = std::thread(&SimulationManager::run, this);
+    this->start();
+}
+
+void SimulationManager::start()
+{
+    if (!IsRunning_)
+    {
+        auto& Messages = Reg_.ctx<MessageHandler>();
+
+        IsRunning_ = true;
+        Thread_ = std::thread(&SimulationManager::run, this);
+        Messages.report("sim", "Simulation thread started successfully", MessageHandler::INFO);
+    }
 }
 
 void SimulationManager::stop()
@@ -28,11 +48,6 @@ void SimulationManager::stop()
     if (IsRunning_)
     {
         auto& Messages = Reg_.ctx<MessageHandler>();
-
-        auto view = Reg_.view<PositionComponent<double>,
-                              VelocityComponent<double>,
-                              AccelerationComponent<double>>();
-        Reg_.destroy(view.begin(), view.end());
 
         IsRunning_ = false;
         Thread_.join();
@@ -65,6 +80,7 @@ void SimulationManager::run()
                     {"method", "sim_broadcast"},
                     {"params",
                      {{"eid", std::uint32_t(_e)},
+                      {"ts", "insert timestamp here"},
                       {"ax", _a.x}, {"ay", _a.y},
                       {"vx", _v.x}, {"vy", _v.y},
                       {"px", _p.x}, {"py", _p.y}}}
