@@ -45,6 +45,8 @@ class NetworkManager
         moodycamel::ConcurrentQueue<std::string>* InputQueue_;
         moodycamel::ConcurrentQueue<std::string>* OutputQueue_;
 
+        std::uint32_t NetworkingStepSize_{10};
+
         ServerType Server_;
         std::map<std::string, websocketpp::connection_hdl> Connections_;
         std::mutex ConnectionsLock_;

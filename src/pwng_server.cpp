@@ -75,11 +75,6 @@ int main(int argc, char* argv[])
     int Port = parseArguments(argc, argv, Reg);
     if (Port != PWNG_ABORT_STARTUP)
     {
-
-        auto IntegratorGroup = Reg.group<PositionComponent<double>,
-                                         VelocityComponent<double>,
-                                         AccelerationComponent<double>>();
-
         moodycamel::ConcurrentQueue<std::string> InputQueue;
         moodycamel::ConcurrentQueue<std::string> OutputQueue;
 

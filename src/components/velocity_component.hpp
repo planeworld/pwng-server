@@ -1,11 +1,11 @@
 #ifndef VELOCITY_COMPONENT_HPP
 #define VELOCITY_COMPONENT_HPP
 
-template <class T>
+#include "math_types.hpp"
+
 struct VelocityComponent
 {
-    T x;
-    T y;
+    Vec2Dd v{0.0, 0.0};
 };
 
 #endif // VELOCITY_COMPONENT_HPP

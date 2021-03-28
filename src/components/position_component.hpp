@@ -1,11 +1,11 @@
 #ifndef POSITION_COMPONENT_HPP
 #define POSITION_COMPONENT_HPP
 
-template <class T>
+#include "math_types.hpp"
+
 struct PositionComponent
 {
-    T x;
-    T y;
+    Vec2Dd v{0.0, 0.0};
 };
 
 #endif // POSITION_COMPONENT_HPP

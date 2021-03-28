@@ -16,17 +16,22 @@ class IntegratorSystem
 
         void integrate(const double _Step) const
         {
-            Reg_.group<PositionComponent<double>,
-                       VelocityComponent<double>,
-                       AccelerationComponent<double>>().each
-                ([_Step](auto _e, auto& _p, auto& _v, auto& _a)
-                {
-                    _v.x += _a.x * _Step;
-                    _v.y += _a.y * _Step;
-                    _p.x += _v.x * _Step;
-                    _p.y += _v.y * _Step;
-                });
+            auto GroupAV = Reg_.group<AccelerationComponent>(entt::get<VelocityComponent>);
+            for (auto e : GroupAV)
+            {
+                const auto& _a = GroupAV.get<AccelerationComponent>(e);
+                auto& _v = GroupAV.get<VelocityComponent>(e);
 
+                _v.v += _a.v * _Step;
+            }
+            auto GroupVP = Reg_.group<VelocityComponent, PositionComponent>();
+            for (auto e : GroupVP)
+            {
+                const auto& _v = GroupVP.get<VelocityComponent>(e);
+                auto& _p = GroupVP.get<PositionComponent>(e);
+
+                _p.v += _v.v * _Step;
+            }
         }
 
     private:

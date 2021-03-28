@@ -8,9 +8,7 @@
 #include <concurrentqueue/concurrentqueue.h>
 #include <entt/entity/registry.hpp>
 
-#include "acceleration_component.hpp"
-#include "position_component.hpp"
-#include "velocity_component.hpp"
+#include "gravity_system.hpp"
 #include "integrator_system.hpp"
 
 #include <nlohmann/json.hpp>
@@ -22,7 +20,9 @@ class SimulationManager
 
     public:
 
-        SimulationManager(entt::registry& _Reg) : Reg_(_Reg), SysIntegrator_(_Reg) {}
+        SimulationManager(entt::registry& _Reg) : Reg_(_Reg),
+                                                  SysGravity_(_Reg),
+                                                  SysIntegrator_(_Reg){}
         ~SimulationManager();
 
         bool isRunning() const {return IsRunning_;}
@@ -37,11 +37,14 @@ class SimulationManager
 
         void run();
 
-        entt::registry& Reg_;
+        entt::registry&   Reg_;
+        GravitySystem    SysGravity_;
         IntegratorSystem SysIntegrator_;
 
         moodycamel::ConcurrentQueue<std::string>* InputQueue_;
         moodycamel::ConcurrentQueue<std::string>* OutputQueue_;
+
+        std::uint32_t SimStepSize_{10};
 
         b2World*    World_;
         b2World*    World2_;

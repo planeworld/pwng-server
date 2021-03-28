@@ -148,7 +148,7 @@ void NetworkManager::run()
 
             // std::cout << Message << std::endl;
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        std::this_thread::sleep_for(std::chrono::milliseconds(NetworkingStepSize_));
     }
     DBLK(Messages.report("net", "Sender thread stopped successfully", MessageHandler::DEBUG_L1);)
 }

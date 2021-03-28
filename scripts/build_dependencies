@@ -11,6 +11,9 @@ git config --global advice.detachedHead false
 echo "--- CLONING ARGAGG ---"
 git clone --depth 1 https://github.com/vietjtnguyen/argagg.git > /dev/null
 
+echo "--- CLONING EIGEN ---"
+git clone --branch 3.3.9 --depth 1 https://gitlab.com/libeigen/eigen.git > /dev/null
+
 echo "--- CLONING LIBNOISE2D ---"
 git clone --depth 1 https://github.com/planeworld/libnoise2d.git > /dev/null
 
@@ -46,6 +49,17 @@ cd build
 cmake .. -DCMAKE_INSTALL_PREFIX=../../../install -DARGAGG_BUILD_DOCS=OFF -DARGAGG_BUILD_EXAMPLES=OFF -DARGAGG_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=RELEASE > /dev/null
 make install > /dev/null
 cd ../..
+
+# Install eigen
+
+echo "--- INSTALLING EIGEN ---"
+cd eigen
+mkdir -p build
+cd build
+cmake .. -DCMAKE_INSTALL_PREFIX=../../../install -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=RELEASE > /dev/null
+make -j8 install > /dev/null
+cd ../..
+
 
 # Install libnoise2d
 
