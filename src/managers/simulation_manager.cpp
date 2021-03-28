@@ -94,7 +94,7 @@ void SimulationManager::run()
 
         static std::uint32_t c{0u};
 
-        if (c == 10u)
+        if (c == 2u)
         {
             Reg_.group<VelocityComponent,
                     PositionComponent>(entt::get<
