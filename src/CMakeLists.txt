@@ -6,7 +6,9 @@ set(HEADERS
   ${LIB_NOISE_HEADERS}
   components/acceleration_component.hpp
   components/body_component.hpp
+  components/name_component.hpp
   components/position_component.hpp
+  components/radius_component.hpp
   components/velocity_component.hpp
   managers/network_manager.hpp
   managers/simulation_manager.hpp

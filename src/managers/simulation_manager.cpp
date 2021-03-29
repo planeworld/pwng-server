@@ -4,7 +4,9 @@
 
 #include "acceleration_component.hpp"
 #include "body_component.hpp"
+#include "name_component.hpp"
 #include "position_component.hpp"
+#include "radius_component.hpp"
 #include "velocity_component.hpp"
 
 SimulationManager::~SimulationManager()
@@ -34,23 +36,31 @@ void SimulationManager::init(moodycamel::ConcurrentQueue<std::string>* const _In
     auto GroupVPAB = Reg_.group<VelocityComponent,PositionComponent>(
                                 entt::get<AccelerationComponent, BodyComponent>);
 
-    // 149 598 022,96
     auto Earth = Reg_.create();
     Reg_.emplace<PositionComponent>(Earth, Vec2Dd{0.0, -152.1e9});
-    // Reg_.emplace<PositionComponent>(Earth, Vec2Dd{0.0, -152.1e2});
     Reg_.emplace<VelocityComponent>(Earth, Vec2Dd{29.29e3, 0.0});
     Reg_.emplace<AccelerationComponent>(Earth, Vec2Dd{0.0, 0.0});
     Reg_.emplace<BodyComponent>(Earth, 5.972e24, 8.008e37);
+    Reg_.emplace<NameComponent>(Earth, "Earth");
+    Reg_.emplace<RadiusComponent>(Earth, 6378137.0);
+
+    auto Moon = Reg_.create();
+    Reg_.emplace<PositionComponent>(Moon, Vec2Dd{384400.0e3, -152.1e9});
+    Reg_.emplace<VelocityComponent>(Moon, Vec2Dd{29.29e3, 964.0});
+    Reg_.emplace<AccelerationComponent>(Moon, Vec2Dd{0.0, 0.0});
+    Reg_.emplace<BodyComponent>(Moon, 7.346e22, 1.0);
+    Reg_.emplace<NameComponent>(Moon, "Moon");
+    Reg_.emplace<RadiusComponent>(Moon, 1737.0e3);
 
     auto Sun = Reg_.create();
     Reg_.emplace<PositionComponent>(Sun, Vec2Dd{0.0, 0.0});
     Reg_.emplace<VelocityComponent>(Sun, Vec2Dd{0.0, 0.0});
     Reg_.emplace<AccelerationComponent>(Sun, Vec2Dd{0.0, 0.0});
     Reg_.emplace<BodyComponent>(Sun, 1.9884e30, 1.0);
+    Reg_.emplace<NameComponent>(Sun, "Sun");
+    Reg_.emplace<RadiusComponent>(Sun, 6.96342e8);
 
-    std::cout << GroupAV.size() << std::endl;
-
-    this->start();
+    // this->start();
 }
 
 void SimulationManager::start()
@@ -99,8 +109,10 @@ void SimulationManager::run()
             Reg_.group<VelocityComponent,
                     PositionComponent>(entt::get<
                     AccelerationComponent,
-                    BodyComponent>).each
-                ([&](auto _e, const auto& _v, const auto& _p, const auto& _a, const auto& _b)
+                    BodyComponent,
+                    RadiusComponent,
+                    NameComponent>).each
+                ([&](auto _e, const auto& _v, const auto& _p, const auto& _a, const auto& _b, const auto& _r, const auto& _n)
                 {
                     json j =
                     {
@@ -109,7 +121,10 @@ void SimulationManager::run()
                         {"params",
                         {{"eid", std::uint32_t(_e)},
                         {"ts", "insert timestamp here"},
-                        {"m", _b.m}, {"i", _b.i},
+                        {"name", _n.n},
+                        {"m", _b.m},
+                        {"i", _b.i},
+                        {"r", _r.r},
                         {"ax", _a.v(0)}, {"ay", _a.v(1)},
                         {"vx", _v.v(0)}, {"vy", _v.v(1)},
                         {"px", _p.v(0)}, {"py", _p.v(1)}}}

@@ -21,6 +21,13 @@ class GravitySystem
         void calculateForces()
         {
             auto ViewPAB = Reg_.view<PositionComponent, AccelerationComponent, BodyComponent>();
+
+            for (auto e : ViewPAB)
+            {
+                auto& a = Reg_.get<AccelerationComponent>(e);
+                a={{0.0, 0.0}};
+            }
+
             for (auto e : ViewPAB)
             {
                 const auto& p = ViewPAB.get<PositionComponent>(e);
@@ -31,12 +38,12 @@ class GravitySystem
                 Reg_.emplace<DoneComponent_>(e);
 
                 this->calculateInnerLoop(e, p.v, b.m, a.v);
-            };
+            }
 
             for (auto e : ViewPAB)
             {
                 Reg_.remove<DoneComponent_>(e);
-            };
+            }
         }
 
     private:
@@ -60,8 +67,10 @@ class GravitySystem
                 constexpr double G = 6.6743e-11;
                 Vec2Dd Tmp  = G / Rsqr * d;
 
-                _AccCompOuter = -Tmp * b.m;
-                a.v = Tmp * _BodyCompOuter;
+                _AccCompOuter -= Tmp * b.m;
+                a.v += Tmp * _BodyCompOuter;
+
+                // std::cout << int(_EntityOuter) << " - " << int(e) << std::endl;
             }
         }
 
