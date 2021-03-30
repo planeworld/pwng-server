@@ -1,0 +1,8 @@
+name: pwng-server-ci
+on: [push]
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v2
+        - run: ./scripts/build_dependencies
