@@ -22,6 +22,3 @@ cd build
 echo "> cmake .. -DCMAKE_PREFIX_PATH=../install -DCMAKE_INSTALL_PREFIX=../install -DCMAKE_BUILD_TYPE=$BUILD_TYPE"
 cmake .. -DCMAKE_PREFIX_PATH=../install -DCMAKE_INSTALL_PREFIX=../install -DCMAKE_BUILD_TYPE=$BUILD_TYPE
 make -j8 install
-
-echo "> cd $(dirname "$0")/.."
-cd $(dirname "$0")/..
