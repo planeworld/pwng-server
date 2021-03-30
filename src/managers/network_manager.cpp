@@ -57,7 +57,7 @@ void NetworkManager::onClose(websocketpp::connection_hdl _Connection)
     auto& Messages = Reg_.ctx<MessageHandler>();
 
     std::lock_guard<std::mutex> Lock(ConnectionsLock_);
-    Connections_.erase("1");
+    Connections_.erase(_Connection);
 
     Messages.report("net", "Connection to client closed", MessageHandler::INFO);
     DBLK(Messages.report("net", std::to_string(Connections_.size())+ " open connections.", MessageHandler::DEBUG_L2);)
@@ -81,10 +81,10 @@ bool NetworkManager::onValidate(websocketpp::connection_hdl _Connection)
 
     DBLK(Messages.report("net", "Query string: " + Uri->get_query(), MessageHandler::DEBUG_L1);)
 
-    std::string ID = "1";
     Messages.report("net", "Connection validated", MessageHandler::INFO);
     std::lock_guard<std::mutex> Lock(ConnectionsLock_);
-    Connections_.insert({ID, _Connection});
+    // Connections_.insert({++ConnectionID_, _Connection});
+    Connections_.insert(_Connection);
 
     DBLK(Messages.report("net", std::to_string(Connections_.size())+ " open connection(s).", MessageHandler::DEBUG_L2);)
 
@@ -128,23 +128,20 @@ void NetworkManager::run()
         std::string Message;
         while (OutputQueue_->try_dequeue(Message))
         {
-            std::string ID = "1";
-
-            auto it = Connections_.find(ID);
-            if (it != Connections_.end())
+            // auto it = Connections_.find(ConnectionID_);
+            for (const auto& Con : Connections_)
             {
-                auto Connection = it->second;
                 websocketpp::lib::error_code ErrorCode;
-                Server_.send(Connection, Message, websocketpp::frame::opcode::text, ErrorCode);
+                Server_.send(Con, Message, websocketpp::frame::opcode::text, ErrorCode);
                 if (ErrorCode)
                 {
                     Messages.report("net", "Sending failed: " + ErrorCode.message());
                 }
             }
-            else
-            {
-                // std::cout << "Socket unknown, message dropped" << std::endl;
-            }
+            // else
+            // {
+            //     // std::cout << "Socket unknown, message dropped" << std::endl;
+            // }
 
             // std::cout << Message << std::endl;
         }
@@ -167,11 +164,10 @@ bool NetworkManager::stop()
         return false;
     }
 
-    std::map<std::string, websocketpp::connection_hdl>::iterator it;
-    for (it = Connections_.begin(); it != Connections_.end(); ++it)
+    for (auto Con : Connections_)
     {
         websocketpp::lib::error_code ErrorCode;
-        Server_.close(it->second, websocketpp::close::status::normal,
+        Server_.close(Con, websocketpp::close::status::normal,
                       "Server shutting down, closing connection.", ErrorCode);
         if (ErrorCode)
         {

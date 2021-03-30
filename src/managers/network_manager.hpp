@@ -1,8 +1,8 @@
 #ifndef NETWORK_MANAGER_HPP
 #define NETWORK_MANAGER_HPP
 
-#include <map>
 #include <mutex>
+#include <set>
 #include <sstream>
 #include <string>
 #include <thread>
@@ -48,7 +48,7 @@ class NetworkManager
         std::uint32_t NetworkingStepSize_{10};
 
         ServerType Server_;
-        std::map<std::string, websocketpp::connection_hdl> Connections_;
+        std::set<websocketpp::connection_hdl, std::owner_less<websocketpp::connection_hdl>> Connections_;
         std::mutex ConnectionsLock_;
 
         std::thread ThreadSender_;
