@@ -1,4 +1,4 @@
-name: pwng-server-ci
+name: build 
 on: [push]
 jobs:
   compile:
