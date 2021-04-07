@@ -5,4 +5,6 @@
 
 using Vec2Dd = Eigen::Vector2d;
 
+constexpr double MATH_PI=3.141592653589793;
+
 #endif // MATH_TYPES_HPP

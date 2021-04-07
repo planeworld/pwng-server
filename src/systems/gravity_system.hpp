@@ -20,7 +20,7 @@ class GravitySystem
 
         void calculateForces()
         {
-            auto ViewPAB = Reg_.view<PositionComponent, AccelerationComponent, BodyComponent>();
+            auto ViewPAB = Reg_.view<PositionComponent, AccelerationComponent, BodyComponent, GravitatorComponent>();
 
             for (auto e : ViewPAB)
             {
@@ -62,6 +62,9 @@ class GravitySystem
 
                 Vec2Dd Diff = (_PosCompOuter - p.v);
                 double Rsqr = Diff.squaredNorm();
+
+                if (Rsqr < 1.0e6) Rsqr = 1.0e6;
+
                 Vec2Dd d = Diff / std::sqrt(Rsqr);
 
                 constexpr double G = 6.6743e-11;

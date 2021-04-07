@@ -1,5 +1,9 @@
 #include "simulation_manager.hpp"
 
+
+
+#include <random>
+
 #include "message_handler.hpp"
 
 #include "acceleration_component.hpp"
@@ -7,6 +11,8 @@
 #include "name_component.hpp"
 #include "position_component.hpp"
 #include "radius_component.hpp"
+#include "star_definitions.hpp"
+#include "timer.hpp"
 #include "velocity_component.hpp"
 
 SimulationManager::~SimulationManager()
@@ -60,6 +66,68 @@ void SimulationManager::init(moodycamel::ConcurrentQueue<std::string>* const _In
     Reg_.emplace<NameComponent>(Sun, "Sun");
     Reg_.emplace<RadiusComponent>(Sun, 6.96342e8);
 
+    std::mt19937 Generator;
+    std::normal_distribution<double> DistMass(1.0e30, 0.5e30);
+    std::normal_distribution<double> DistRadius(1.0e9, 1.0e9);
+    std::normal_distribution<double> DistGalaxyArmScatter(0.0, 1.0);
+    std::normal_distribution<double> DistGalaxyCenter(0.0, 0.5);
+    std::poisson_distribution<int> DistGalaxyArms(3);
+    std::normal_distribution<double> DistSpectralClass(0.0, 1.0);
+
+    int Arms=DistGalaxyArms(Generator);
+    if (Arms < 2) Arms = 2;
+    Messages.report("sim", "Creating galaxy with " + std::to_string(Arms) + " spiral arms", MessageHandler::INFO);
+    double Alpha = 30.0e13;
+    double Scatter = 0.1; // 10%
+    // double GalaxyRadiusMax = Alpha/(0.5*MATH_PI);
+    double GalaxyRadiusMax = Alpha/(0.5*MATH_PI);
+    double GalaxyPhiMax = 4.0*MATH_PI;
+
+    int c{0};
+    for (auto i=0; i<Arms; ++i)
+    {
+        for (auto Phi=0.5*MATH_PI; Phi<4.0*MATH_PI; Phi+=0.005)
+        {
+            auto e = Reg_.create();
+
+            double r=Alpha/Phi;
+            double p = Phi+2.0*MATH_PI/Arms*i;
+            // double r_n = ((r/GalaxyRadiusMax)+1.0-Phi/GalaxyPhiMax)/2.0;
+            // double r_n = r/GalaxyRadiusMax;
+            double r_n = 1.0-Phi/GalaxyPhiMax;
+            DistSpectralClass = std::normal_distribution<double>(r_n, 0.16);
+            int SpectralClass = DistSpectralClass(Generator)*6;
+            if (SpectralClass < 0) SpectralClass = 0;
+            if (SpectralClass > 6) SpectralClass = 6;
+            std::cout << SpectralClass << " ";
+
+            Reg_.emplace<PositionComponent>(e, Vec2Dd{r*std::cos(p)+DistGalaxyArmScatter(Generator)*r*Scatter,
+                                                      r*std::sin(p)+DistGalaxyArmScatter(Generator)*r*Scatter});
+            Reg_.emplace<VelocityComponent>(e, Vec2Dd{0.0, 0.0});
+            Reg_.emplace<AccelerationComponent>(e, Vec2Dd{0.0, 0.0});
+            Reg_.emplace<BodyComponent>(e, DistMass(Generator)*1.0e-5, 1.0);
+            Reg_.emplace<TemperatureComponent>(e, StarTemperatureDistribution[SpectralClass](Generator));
+            Reg_.emplace<NameComponent>(e, "Star_"+std::to_string(c));
+            Reg_.emplace<RadiusComponent>(e, DistRadius(Generator));
+            ++c;
+        }
+    }
+    std::cout << std::endl;
+    for (auto Phi=0.0; Phi<2.0*MATH_PI; Phi+=0.001)
+    {
+        auto e = Reg_.create();
+
+        double r=DistGalaxyCenter(Generator) * 6.0e13;
+        Reg_.emplace<PositionComponent>(e, r*Vec2Dd{std::cos(Phi),std::sin(Phi)});
+        Reg_.emplace<VelocityComponent>(e, Vec2Dd{0.0, 0.0});
+        Reg_.emplace<AccelerationComponent>(e, Vec2Dd{0.0, 0.0});
+        Reg_.emplace<BodyComponent>(e, DistMass(Generator)*1.0e-5, 1.0);
+        Reg_.emplace<NameComponent>(e, "Star_"+std::to_string(c));
+        Reg_.emplace<RadiusComponent>(e, DistRadius(Generator));
+        ++c;
+    }
+    Messages.report("sim", std::to_string(c) + " star systems generated", MessageHandler::INFO);
+
     // this->start();
 }
 
@@ -90,11 +158,14 @@ void SimulationManager::stop()
 void SimulationManager::run()
 {
     auto& Messages = Reg_.ctx<MessageHandler>();
+    Timer SimulationTimer;
 
     Messages.report("sim", "Simulation Manager running", MessageHandler::INFO);
 
     while (IsRunning_)
     {
+        SimulationTimer.start();
+
         // World_->Step(1.0f/60.0f, 8, 3);
         // World2_->Step(1.0f/60.0f, 8, 3);
         // World_->ShiftOrigin({20.0f, 10.0f});
@@ -111,8 +182,9 @@ void SimulationManager::run()
                     AccelerationComponent,
                     BodyComponent,
                     RadiusComponent,
+                    TemperatureComponent,
                     NameComponent>).each
-                ([&](auto _e, const auto& _v, const auto& _p, const auto& _a, const auto& _b, const auto& _r, const auto& _n)
+                ([&](auto _e, const auto& _v, const auto& _p, const auto& _a, const auto& _b, const auto& _r, const auto& _t, const auto& _n)
                 {
                     json j =
                     {
@@ -125,6 +197,7 @@ void SimulationManager::run()
                         {"m", _b.m},
                         {"i", _b.i},
                         {"r", _r.r},
+                        {"t", _t.h},
                         {"ax", _a.v(0)}, {"ay", _a.v(1)},
                         {"vx", _v.v(0)}, {"vy", _v.v(1)},
                         {"px", _p.v(0)}, {"py", _p.v(1)}}}
@@ -134,6 +207,7 @@ void SimulationManager::run()
             c = 0u;
         }
 
+        SimulationTimer.stop();
         std::this_thread::sleep_for(std::chrono::milliseconds(SimStepSize_));
         ++c;
     }

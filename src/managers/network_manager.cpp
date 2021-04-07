@@ -1,6 +1,7 @@
 #include "network_manager.hpp"
 
 #include "message_handler.hpp"
+#include "timer.hpp"
 
 bool NetworkManager::init(moodycamel::ConcurrentQueue<std::string>* const _InputQueue,
                           moodycamel::ConcurrentQueue<std::string>* const _OutputQueue,
@@ -94,11 +95,14 @@ bool NetworkManager::onValidate(websocketpp::connection_hdl _Connection)
 void NetworkManager::run()
 {
     auto& Messages = Reg_.ctx<MessageHandler>();
+    Timer NetworkTimer;
 
     Messages.report("net", "Network Manager running", MessageHandler::INFO);
 
     while (IsRunning_)
     {
+        NetworkTimer.start();
+
         // Check, if there are any errors or messages from
         // websocketpp.
         // Since output is transferred to a (string-)stream,
@@ -145,6 +149,7 @@ void NetworkManager::run()
 
             // std::cout << Message << std::endl;
         }
+        NetworkTimer.stop();
         std::this_thread::sleep_for(std::chrono::milliseconds(NetworkingStepSize_));
     }
     DBLK(Messages.report("net", "Sender thread stopped successfully", MessageHandler::DEBUG_L1);)

@@ -16,6 +16,8 @@ set(HEADERS
   systems/integrator_system.hpp
   math_types.hpp
   message_handler.hpp
+  star_definitions.hpp
+  timer.hpp
 )
 
 set(SOURCES
