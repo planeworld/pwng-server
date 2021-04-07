@@ -83,6 +83,8 @@ void SimulationManager::init(moodycamel::ConcurrentQueue<std::string>* const _In
     double GalaxyRadiusMax = Alpha/(0.5*MATH_PI);
     double GalaxyPhiMax = 4.0*MATH_PI;
 
+    Arms = 5;
+
     int c{0};
     for (auto i=0; i<Arms; ++i)
     {
@@ -123,6 +125,7 @@ void SimulationManager::init(moodycamel::ConcurrentQueue<std::string>* const _In
         Reg_.emplace<AccelerationComponent>(e, Vec2Dd{0.0, 0.0});
         Reg_.emplace<BodyComponent>(e, DistMass(Generator)*1.0e-5, 1.0);
         Reg_.emplace<NameComponent>(e, "Star_"+std::to_string(c));
+        Reg_.emplace<TemperatureComponent>(e, StarTemperatureDistribution[0](Generator));
         Reg_.emplace<RadiusComponent>(e, DistRadius(Generator));
         ++c;
     }
