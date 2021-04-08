@@ -86,6 +86,9 @@ void SimulationManager::init(moodycamel::ConcurrentQueue<std::string>* const _In
 
     Arms = 2;
 
+    DBLK(Messages.report("sim", "Creating spiral arms", MessageHandler::DEBUG_L1);)
+    DBLK(Messages.report("sim", "Distribution of spectral classes (0-6 = M-O):", MessageHandler::DEBUG_L2);)
+
     int c{0};
     for (auto i=0; i<Arms; ++i)
     {
@@ -102,7 +105,7 @@ void SimulationManager::init(moodycamel::ConcurrentQueue<std::string>* const _In
             int SpectralClass = DistSpectralClass(Generator)*6;
             if (SpectralClass < 0) SpectralClass = 0;
             if (SpectralClass > 6) SpectralClass = 6;
-            std::cout << SpectralClass << " ";
+            DBLK(std::cout << SpectralClass << " ";)
 
             Reg_.emplace<PositionComponent>(e, Vec2Dd{r*std::cos(p)+DistGalaxyArmScatter(Generator)*r*Scatter,
                                                       r*std::sin(p)+DistGalaxyArmScatter(Generator)*r*Scatter});
@@ -115,7 +118,9 @@ void SimulationManager::init(moodycamel::ConcurrentQueue<std::string>* const _In
             ++c;
         }
     }
-    std::cout << std::endl;
+    DBLK(std::cout << std::endl;)
+    DBLK(Messages.report("sim", "Creating center", MessageHandler::DEBUG_L1);)
+    DBLK(Messages.report("sim", "Distribution of spectral classes (0-6 = M-O):", MessageHandler::DEBUG_L2);)
     for (auto Phi=0.0; Phi<2.0*MATH_PI; Phi+=0.001)
     {
         auto e = Reg_.create();
@@ -126,7 +131,7 @@ void SimulationManager::init(moodycamel::ConcurrentQueue<std::string>* const _In
         int SpectralClass = DistSpectralClass(Generator)*6;
         if (SpectralClass < 0) SpectralClass = 0;
         if (SpectralClass > 6) SpectralClass = 6;
-        std::cout << SpectralClass << " ";
+        DBLK(std::cout << SpectralClass << " ";)
 
         Reg_.emplace<PositionComponent>(e, 12.0e13*r*Vec2Dd{std::cos(Phi),std::sin(Phi)});
         Reg_.emplace<VelocityComponent>(e, Vec2Dd{0.0, 0.0});
@@ -137,8 +142,8 @@ void SimulationManager::init(moodycamel::ConcurrentQueue<std::string>* const _In
         Reg_.emplace<RadiusComponent>(e, StarRadiusDistribution[SpectralClass](Generator));
         ++c;
     }
+    DBLK(std::cout << std::endl;)
     Messages.report("sim", std::to_string(c) + " star systems generated", MessageHandler::INFO);
-    std::cout << std::endl;
 
     // this->start();
 }
