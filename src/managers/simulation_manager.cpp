@@ -80,15 +80,16 @@ void SimulationManager::init(moodycamel::ConcurrentQueue<std::string>* const _In
     double Alpha = 30.0e13;
     double Scatter = 0.1; // 10%
     // double GalaxyRadiusMax = Alpha/(0.5*MATH_PI);
-    double GalaxyRadiusMax = Alpha/(0.5*MATH_PI);
-    double GalaxyPhiMax = 4.0*MATH_PI;
+    double GalaxyPhiMin = 0.2 * MATH_PI;
+    double GalaxyPhiMax = 4.0 * MATH_PI;
+    double GalaxyRadiusMax = Alpha / GalaxyPhiMin;
 
-    Arms = 5;
+    Arms = 2;
 
     int c{0};
     for (auto i=0; i<Arms; ++i)
     {
-        for (auto Phi=0.5*MATH_PI; Phi<4.0*MATH_PI; Phi+=0.005)
+        for (auto Phi=GalaxyPhiMin; Phi<GalaxyPhiMax; Phi+=0.005)
         {
             auto e = Reg_.create();
 
@@ -107,10 +108,10 @@ void SimulationManager::init(moodycamel::ConcurrentQueue<std::string>* const _In
                                                       r*std::sin(p)+DistGalaxyArmScatter(Generator)*r*Scatter});
             Reg_.emplace<VelocityComponent>(e, Vec2Dd{0.0, 0.0});
             Reg_.emplace<AccelerationComponent>(e, Vec2Dd{0.0, 0.0});
-            Reg_.emplace<BodyComponent>(e, DistMass(Generator)*1.0e-5, 1.0);
-            Reg_.emplace<TemperatureComponent>(e, StarTemperatureDistribution[SpectralClass](Generator));
+            Reg_.emplace<BodyComponent>(e, StarMassDistribution[SpectralClass](Generator), 1.0);
+            Reg_.emplace<StarDataComponent>(e, SpectralClassE(SpectralClass), StarTemperatureDistribution[SpectralClass](Generator));
             Reg_.emplace<NameComponent>(e, "Star_"+std::to_string(c));
-            Reg_.emplace<RadiusComponent>(e, DistRadius(Generator));
+            Reg_.emplace<RadiusComponent>(e, StarRadiusDistribution[SpectralClass](Generator));
             ++c;
         }
     }
@@ -119,17 +120,25 @@ void SimulationManager::init(moodycamel::ConcurrentQueue<std::string>* const _In
     {
         auto e = Reg_.create();
 
-        double r=DistGalaxyCenter(Generator) * 6.0e13;
-        Reg_.emplace<PositionComponent>(e, r*Vec2Dd{std::cos(Phi),std::sin(Phi)});
+        double r=std::abs(DistGalaxyCenter(Generator));
+
+        DistSpectralClass = std::normal_distribution<double>(r, 0.16);
+        int SpectralClass = DistSpectralClass(Generator)*6;
+        if (SpectralClass < 0) SpectralClass = 0;
+        if (SpectralClass > 6) SpectralClass = 6;
+        std::cout << SpectralClass << " ";
+
+        Reg_.emplace<PositionComponent>(e, 12.0e13*r*Vec2Dd{std::cos(Phi),std::sin(Phi)});
         Reg_.emplace<VelocityComponent>(e, Vec2Dd{0.0, 0.0});
         Reg_.emplace<AccelerationComponent>(e, Vec2Dd{0.0, 0.0});
-        Reg_.emplace<BodyComponent>(e, DistMass(Generator)*1.0e-5, 1.0);
+        Reg_.emplace<BodyComponent>(e, StarMassDistribution[SpectralClass](Generator), 1.0);
         Reg_.emplace<NameComponent>(e, "Star_"+std::to_string(c));
-        Reg_.emplace<TemperatureComponent>(e, StarTemperatureDistribution[0](Generator));
-        Reg_.emplace<RadiusComponent>(e, DistRadius(Generator));
+        Reg_.emplace<StarDataComponent>(e, SpectralClassE(SpectralClass), StarTemperatureDistribution[SpectralClass](Generator));
+        Reg_.emplace<RadiusComponent>(e, StarRadiusDistribution[SpectralClass](Generator));
         ++c;
     }
     Messages.report("sim", std::to_string(c) + " star systems generated", MessageHandler::INFO);
+    std::cout << std::endl;
 
     // this->start();
 }
@@ -185,9 +194,9 @@ void SimulationManager::run()
                     AccelerationComponent,
                     BodyComponent,
                     RadiusComponent,
-                    TemperatureComponent,
+                    StarDataComponent,
                     NameComponent>).each
-                ([&](auto _e, const auto& _v, const auto& _p, const auto& _a, const auto& _b, const auto& _r, const auto& _t, const auto& _n)
+                ([&](auto _e, const auto& _v, const auto& _p, const auto& _a, const auto& _b, const auto& _r, const auto& _s, const auto& _n)
                 {
                     json j =
                     {
@@ -200,7 +209,8 @@ void SimulationManager::run()
                         {"m", _b.m},
                         {"i", _b.i},
                         {"r", _r.r},
-                        {"t", _t.h},
+                        {"sc", _s.SpectralClass},
+                        {"t", _s.Temperature},
                         {"ax", _a.v(0)}, {"ay", _a.v(1)},
                         {"vx", _v.v(0)}, {"vy", _v.v(1)},
                         {"px", _p.v(0)}, {"py", _p.v(1)}}}
