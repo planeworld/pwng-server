@@ -67,8 +67,6 @@ void SimulationManager::init(moodycamel::ConcurrentQueue<std::string>* const _In
     Reg_.emplace<RadiusComponent>(Sun, 6.96342e8);
 
     std::mt19937 Generator;
-    std::normal_distribution<double> DistMass(1.0e30, 0.5e30);
-    std::normal_distribution<double> DistRadius(1.0e9, 1.0e9);
     std::normal_distribution<double> DistGalaxyArmScatter(0.0, 1.0);
     std::normal_distribution<double> DistGalaxyCenter(0.0, 0.5);
     std::poisson_distribution<int> DistGalaxyArms(3);
@@ -77,12 +75,13 @@ void SimulationManager::init(moodycamel::ConcurrentQueue<std::string>* const _In
     int Arms=DistGalaxyArms(Generator);
     if (Arms < 2) Arms = 2;
     Messages.report("sim", "Creating galaxy with " + std::to_string(Arms) + " spiral arms", MessageHandler::INFO);
-    double Alpha = 30.0e13;
+    double Alpha = 1.0e22;
     double Scatter = 0.1; // 10%
     // double GalaxyRadiusMax = Alpha/(0.5*MATH_PI);
     double GalaxyPhiMin = 0.2 * MATH_PI;
     double GalaxyPhiMax = 4.0 * MATH_PI;
     double GalaxyRadiusMax = Alpha / GalaxyPhiMin;
+    double GalaxyDistanceMean = 5.0e16;
 
     Arms = 2;
 
@@ -98,8 +97,6 @@ void SimulationManager::init(moodycamel::ConcurrentQueue<std::string>* const _In
 
             double r=Alpha/Phi;
             double p = Phi+2.0*MATH_PI/Arms*i;
-            // double r_n = ((r/GalaxyRadiusMax)+1.0-Phi/GalaxyPhiMax)/2.0;
-            // double r_n = r/GalaxyRadiusMax;
             double r_n = 1.0-Phi/GalaxyPhiMax;
             DistSpectralClass = std::normal_distribution<double>(r_n, 0.16);
             int SpectralClass = DistSpectralClass(Generator)*6;
@@ -133,7 +130,7 @@ void SimulationManager::init(moodycamel::ConcurrentQueue<std::string>* const _In
         if (SpectralClass > 6) SpectralClass = 6;
         DBLK(std::cout << SpectralClass << " ";)
 
-        Reg_.emplace<PositionComponent>(e, 12.0e13*r*Vec2Dd{std::cos(Phi),std::sin(Phi)});
+        Reg_.emplace<PositionComponent>(e, 0.5e22*r*Vec2Dd{std::cos(Phi),std::sin(Phi)});
         Reg_.emplace<VelocityComponent>(e, Vec2Dd{0.0, 0.0});
         Reg_.emplace<AccelerationComponent>(e, Vec2Dd{0.0, 0.0});
         Reg_.emplace<BodyComponent>(e, StarMassDistribution[SpectralClass](Generator), 1.0);
@@ -222,7 +219,7 @@ void SimulationManager::run()
                     };
                     OutputQueue_->enqueue(j.dump(4));
                 });
-            c = 3u;
+            c = 0u;
         }
 
         SimulationTimer.stop();
