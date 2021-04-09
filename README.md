@@ -2,9 +2,17 @@
 
 ## What is Planeworld
 
-Planeworld is a galaxy/universe simulation engine (server component) and a desktop client that can connect via websocket. The following screenshot shows a procedurally generated galaxy with two spiral arms. Stars are are all within the main sequence (stellar classes M - O) for now. Stellar class distribution as well as masses, temperatures and radii are generated using probability distributions with respect to the information available.
+Planeworld is a galaxy/universe simulation engine (server component) and a desktop client that can connect via websocket. The following screenshot (Figure 1) shows a procedurally generated galaxy with two spiral arms. Stars are are all within the main sequence (stellar classes M - O) for now. Stellar class distribution as well as masses, temperatures and radii are generated using probability distributions with respect to the information available.
 
-![Very early galaxy representation](screenshots/galaxy_2021-04-09.png?raw=true)
+![galaxy representation](screenshots/galaxy_2021-04-09.png?raw=true)
+
+*Figure 1: Procedurally generated galaxy*
+
+The second screenshot (Figure 2) shows details of some region in one of the galaxy arms. Note, that sizes of stars are exaggerated via slider in the GUI for a more symbolic representation.
+
+![galaxy representation_detail](screenshots/galaxy_detail_2021-04-09.png?raw=true)
+
+*Figure 2: Details of stars (size exaggerated via GUI for a more symbolic representation)*
 
 ### A journey of a hobby coder
 
