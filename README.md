@@ -2,6 +2,8 @@
 
 ## What is Planeworld
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/165c5658dd624d71996acf2485c7bc9a)](https://app.codacy.com/gh/planeworld/pwng-server?utm_source=github.com&utm_medium=referral&utm_content=planeworld/pwng-server&utm_campaign=Badge_Grade_Settings)
+
 Planeworld is a galaxy/universe simulation engine (server component) and a desktop client that can connect via websocket. The following screenshot (Figure 1) shows a procedurally generated galaxy with two spiral arms. Stars are are all within the main sequence (stellar classes M - O) for now. Stellar class distribution as well as masses, temperatures and radii are generated using probability distributions with respect to the information available.
 
 ![galaxy representation](screenshots/galaxy_2021-04-09.png?raw=true)
