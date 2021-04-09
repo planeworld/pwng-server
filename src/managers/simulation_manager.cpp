@@ -219,7 +219,7 @@ void SimulationManager::run()
                     };
                     OutputQueue_->enqueue(j.dump(4));
                 });
-            c = 0u;
+            c = 3u;
         }
 
         SimulationTimer.stop();
