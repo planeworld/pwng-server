@@ -14,7 +14,7 @@ Sometime ago I just needed a break, started some pet project [BattleSub](https:/
 
 Based on my positive experiences from [BattleSub](https://github.com/bfeldpw/battlesub) with [Magnum](https://github.com/mosra/magnum) and [EnTT](https://github.com/skypjack/entt) and decades of lessons learned concerning Planeworld, I decided to restart my passion project [Planeworld](https://github.com/planeworld/planeworld) by consequently using a client server mechanic, an ECS (EnTT) and a graphics (and much more) middleware (Magnum Graphics). While the server component doesn't rely on a graphical interface, check out Magnum Graphics used by the desktop client, too.
 
-![Very early galaxy representation](screenshots/Screenshot_20210407_201720.png?raw=true)
+![Very early galaxy representation](screenshots/galaxy_2021-04-09.png?raw=true)
 
 ## Client-Server Communication Protocol
 
