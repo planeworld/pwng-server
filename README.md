@@ -3,7 +3,7 @@
 
 ## What is Planeworld
 
-Planeworld is a galaxy/universe simulation engine (server component) and a desktop client that can connect via websocket. The following screenshot (Figure 1) shows a procedurally generated galaxy with two spiral arms. Stars are are all within the main sequence (stellar classes M - O) for now. Stellar class distribution as well as masses, temperatures and radii are generated using probability distributions with respect to the information available.
+Planeworld is a galaxy/universe simulation engine (server component) and a [desktop client](https://github.com/planeworld/pwng-client) that can connect via websocket. The following screenshot (Figure 1) shows a procedurally generated galaxy with two spiral arms. Stars are are all within the main sequence (stellar classes M - O) for now. Stellar class distribution as well as masses, temperatures and radii are generated using probability distributions with respect to the information available.
 
 ![galaxy representation](screenshots/galaxy_2021-04-09.png?raw=true)
 
@@ -25,7 +25,7 @@ Sometime ago I just needed a break, started some pet project [BattleSub](https:/
 
 ### Why Planeworld NG?
 
-Based on my positive experiences from [BattleSub](https://github.com/bfeldpw/battlesub) with [Magnum](https://github.com/mosra/magnum) and [EnTT](https://github.com/skypjack/entt) and decades of lessons learned concerning Planeworld, I decided to restart my passion project [Planeworld](https://github.com/planeworld/planeworld) by consequently using a client server mechanic, an ECS (EnTT) and a graphics (and much more) middleware (Magnum Graphics). While the server component doesn't rely on a graphical interface, check out Magnum Graphics used by the desktop client, too.
+Based on my positive experiences from [BattleSub](https://github.com/bfeldpw/battlesub) with [Magnum](https://github.com/mosra/magnum) and [EnTT](https://github.com/skypjack/entt) and decades of lessons learned concerning Planeworld, I decided to restart my passion project by consequently using a client server mechanic, and utilising EnTT and Magnum Graphics, as well as some others (credits will follow). While the server component doesn't rely on a graphical interface, check out Magnum Graphics used by the desktop client, too.
 
 ## Client-Server Communication Protocol
 
