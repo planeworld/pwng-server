@@ -154,7 +154,7 @@ void SimulationManager::queueGalaxyData() const
             RadiusComponent,
             StarDataComponent,
             NameComponent>).each
-        ([&](auto _e, const auto& _v, const auto& _p, const auto& _b, const auto& _r, const auto& _s, const auto& _n)
+        ([&](auto _e, const auto& _v, const auto& _p, const auto& _a, const auto& _b, const auto& _r, const auto& _s, const auto& _n)
         {
             json j =
             {
