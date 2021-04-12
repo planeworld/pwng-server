@@ -86,7 +86,7 @@ void SimulationManager::init(moodycamel::ConcurrentQueue<std::string>* const _In
     Arms = 2;
 
     DBLK(Messages.report("sim", "Creating spiral arms", MessageHandler::DEBUG_L1);)
-    DBLK(Messages.report("sim", "Distribution of spectral classes (0-6 = M-O):", MessageHandler::DEBUG_L2);)
+    DBLK(Messages.report("sim", "Distribution of spectral classes (0-6 = M-O):", MessageHandler::DEBUG_L3);)
 
     int c{0};
     for (auto i=0; i<Arms; ++i)
@@ -117,7 +117,7 @@ void SimulationManager::init(moodycamel::ConcurrentQueue<std::string>* const _In
     }
     DBLK(std::cout << std::endl;)
     DBLK(Messages.report("sim", "Creating center", MessageHandler::DEBUG_L1);)
-    DBLK(Messages.report("sim", "Distribution of spectral classes (0-6 = M-O):", MessageHandler::DEBUG_L2);)
+    DBLK(Messages.report("sim", "Distribution of spectral classes (0-6 = M-O):", MessageHandler::DEBUG_L3);)
     for (auto Phi=0.0; Phi<2.0*MATH_PI; Phi+=0.001)
     {
         auto e = Reg_.create();
@@ -143,6 +143,38 @@ void SimulationManager::init(moodycamel::ConcurrentQueue<std::string>* const _In
     Messages.report("sim", std::to_string(c) + " star systems generated", MessageHandler::INFO);
 
     // this->start();
+}
+
+void SimulationManager::queueGalaxyData() const
+{
+    Reg_.group<VelocityComponent,
+            PositionComponent>(entt::get<
+            AccelerationComponent,
+            BodyComponent,
+            RadiusComponent,
+            StarDataComponent,
+            NameComponent>).each
+        ([&](auto _e, const auto& _v, const auto& _p, const auto& _b, const auto& _r, const auto& _s, const auto& _n)
+        {
+            json j =
+            {
+                {"jsonrpc", "2.0"},
+                {"method", "sim_broadcast"},
+                {"params",
+                {{"eid", std::uint32_t(_e)},
+                {"ts", "insert timestamp here"},
+                {"name", _n.n},
+                {"m", _b.m},
+                {"i", _b.i},
+                {"r", _r.r},
+                {"sc", _s.SpectralClass},
+                {"t", _s.Temperature},
+                {"ax", _a.v(0)}, {"ay", _a.v(1)},
+                {"vx", _v.v(0)}, {"vy", _v.v(1)},
+                {"px", _p.v(0)}, {"py", _p.v(1)}}}
+            };
+            OutputQueue_->enqueue(j.dump(4));
+        });
 }
 
 void SimulationManager::start()
@@ -172,6 +204,8 @@ void SimulationManager::stop()
 void SimulationManager::run()
 {
     auto& Messages = Reg_.ctx<MessageHandler>();
+    Timer QueueOutTimer;
+    Timer PhysicsTimer;
     Timer SimulationTimer;
 
     Messages.report("sim", "Simulation Manager running", MessageHandler::INFO);
@@ -179,7 +213,7 @@ void SimulationManager::run()
     while (IsRunning_)
     {
         SimulationTimer.start();
-
+        PhysicsTimer.start();
         // World_->Step(1.0f/60.0f, 8, 3);
         // World2_->Step(1.0f/60.0f, 8, 3);
         // World_->ShiftOrigin({20.0f, 10.0f});
@@ -187,43 +221,29 @@ void SimulationManager::run()
         SysGravity_.calculateForces();
         SysIntegrator_.integrate(3600.0);
 
+        PhysicsTimer.stop();
+
         static std::uint32_t c{0u};
 
-        if (c == 2u)
+        QueueOutTimer.start();
+        QueueOutTimer.stop();
+
+        json j =
         {
-            Reg_.group<VelocityComponent,
-                    PositionComponent>(entt::get<
-                    AccelerationComponent,
-                    BodyComponent,
-                    RadiusComponent,
-                    StarDataComponent,
-                    NameComponent>).each
-                ([&](auto _e, const auto& _v, const auto& _p, const auto& _a, const auto& _b, const auto& _r, const auto& _s, const auto& _n)
-                {
-                    json j =
-                    {
-                        {"jsonrpc", "2.0"},
-                        {"method", "sim_broadcast"},
-                        {"params",
-                        {{"eid", std::uint32_t(_e)},
-                        {"ts", "insert timestamp here"},
-                        {"name", _n.n},
-                        {"m", _b.m},
-                        {"i", _b.i},
-                        {"r", _r.r},
-                        {"sc", _s.SpectralClass},
-                        {"t", _s.Temperature},
-                        {"ax", _a.v(0)}, {"ay", _a.v(1)},
-                        {"vx", _v.v(0)}, {"vy", _v.v(1)},
-                        {"px", _p.v(0)}, {"py", _p.v(1)}}}
-                    };
-                    OutputQueue_->enqueue(j.dump(4));
-                });
-            c = 3u;
-        }
+            {"jsonrpc", "2.0"},
+            {"method", "sim_stats"},
+            {"params",
+            {
+            {"ts", "insert timestamp here"},
+            {"t_sim", SimulationTimer.split()},
+            {"t_phy", PhysicsTimer.elapsed()},
+            {"t_queue_out", QueueOutTimer.elapsed()}}}
+        };
+        OutputQueue_->enqueue(j.dump(4));
 
         SimulationTimer.stop();
-        std::this_thread::sleep_for(std::chrono::milliseconds(SimStepSize_));
+        if (SimStepSize_ - SimulationTimer.elapsed_ms() > 0.0)
+            std::this_thread::sleep_for(std::chrono::milliseconds(SimStepSize_ - int(SimulationTimer.elapsed_ms())));
         ++c;
     }
 

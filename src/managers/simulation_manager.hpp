@@ -30,6 +30,7 @@ class SimulationManager
         void init(moodycamel::ConcurrentQueue<std::string>* const _InputQueue,
                   moodycamel::ConcurrentQueue<std::string>* const _OutputQueue);
 
+        void queueGalaxyData() const;
         void start();
         void stop();
 

@@ -93,6 +93,18 @@ int main(int argc, char* argv[])
 
                     json j = json::parse(Message);
 
+                    if (j["params"]["Message"] == "get_data")
+                    {
+                        Messages.report("prg", "Static galaxy data requested", MessageHandler::INFO);
+                        json Result =
+                        {
+                            {"jsonrpc", "2.0"},
+                            {"result", "success"},
+                            {"id", j["id"]}
+                        };
+                        OutputQueue.enqueue(Result.dump(4));
+                        Simulation.queueGalaxyData();
+                    }
                     if (j["params"]["Message"] == "start_simulation")
                     {
                         Messages.report("prg", "Simulation start requested", MessageHandler::INFO);
@@ -132,7 +144,6 @@ int main(int argc, char* argv[])
                         std::this_thread::sleep_for(std::chrono::seconds(2));
                         Network.stop();
                     }
-
 
                 }
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));

@@ -142,15 +142,10 @@ void NetworkManager::run()
                     Messages.report("net", "Sending failed: " + ErrorCode.message());
                 }
             }
-            // else
-            // {
-            //     // std::cout << "Socket unknown, message dropped" << std::endl;
-            // }
-
-            // std::cout << Message << std::endl;
         }
         NetworkTimer.stop();
-        std::this_thread::sleep_for(std::chrono::milliseconds(NetworkingStepSize_));
+        if (NetworkingStepSize_ - NetworkTimer.elapsed_ms() > 0.0)
+            std::this_thread::sleep_for(std::chrono::milliseconds(NetworkingStepSize_ - int(NetworkTimer.elapsed_ms())));
     }
     DBLK(Messages.report("net", "Sender thread stopped successfully", MessageHandler::DEBUG_L1);)
 }
