@@ -31,7 +31,7 @@ class SimulationManager
         void init(moodycamel::ConcurrentQueue<NetworkMessage>* const _InputQueue,
                   moodycamel::ConcurrentQueue<NetworkMessage>* const _OutputQueue);
 
-        void queueGalaxyData(ConIDType _ID) const;
+        void queueGalaxyData(entt::entity _ID) const;
         void start();
         void stop();
 

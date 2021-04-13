@@ -1,14 +1,13 @@
 #ifndef NETWORK_MESSAGE_HPP
 #define NETWORK_MESSAGE_HPP
 
-#include <cstdint>
-#include <string>
+#include <entt/entity/entity.hpp>
 
-using ConIDType = std::uint64_t;
+#include <string>
 
 struct NetworkMessage
 {
-    ConIDType ID;
+    entt::entity ID;
     std::string Payload;
 };
 

@@ -1,7 +1,5 @@
 #include "simulation_manager.hpp"
 
-
-
 #include <random>
 
 #include "message_handler.hpp"
@@ -145,7 +143,7 @@ void SimulationManager::init(moodycamel::ConcurrentQueue<NetworkMessage>* const 
     // this->start();
 }
 
-void SimulationManager::queueGalaxyData(ConIDType _ID) const
+void SimulationManager::queueGalaxyData(entt::entity _ID) const
 {
     Reg_.group<VelocityComponent,
             PositionComponent>(entt::get<
@@ -239,7 +237,7 @@ void SimulationManager::run()
             {"t_phy", PhysicsTimer.elapsed()},
             {"t_queue_out", QueueOutTimer.elapsed()}}}
         };
-        OutputQueue_->enqueue({1u, j.dump(4)});
+        // OutputQueue_->enqueue({1u, j.dump(4)});
 
         SimulationTimer.stop();
         if (SimStepSize_ - SimulationTimer.elapsed_ms() > 0.0)

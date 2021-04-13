@@ -3,8 +3,6 @@
 #include "message_handler.hpp"
 #include "timer.hpp"
 
-ConIDType NetworkManager::ConnectionIDCounter_{0};
-
 bool NetworkManager::init(moodycamel::ConcurrentQueue<NetworkMessage>* const _InputQueue,
                           moodycamel::ConcurrentQueue<NetworkMessage>* const _OutputQueue,
                           int _Port)
@@ -65,10 +63,11 @@ void NetworkManager::onClose(websocketpp::connection_hdl _Connection)
     Connections_.erase(_Connection);
     ConIDToHdl_.erase(ID);
     ConHdlToID_.erase(_Connection);
+    Reg_.destroy(entt::entity(ID));
 
     Messages.report("net", "Connection to client closed", MessageHandler::INFO);
 
-    DBLK(Messages.report("net", "Connection ID was: "+std::to_string(ID), MessageHandler::DEBUG_L1);)
+    DBLK(Messages.report("net", "Connection ID was: "+std::to_string(entt::id_type(ID)), MessageHandler::DEBUG_L1);)
     DBLK(Messages.report("net", std::to_string(Connections_.size())+ " open connections.", MessageHandler::DEBUG_L2);)
 }
 
@@ -77,7 +76,7 @@ void NetworkManager::onMessage(websocketpp::connection_hdl _Connection, ServerTy
     auto& Messages = Reg_.ctx<MessageHandler>();
 
     DBLK(Messages.report("net", "Enqueueing incoming message from ID: "
-                         + std::to_string(ConHdlToID_[_Connection])+"\n"
+                         + std::to_string(entt::id_type(ConHdlToID_[_Connection]))+"\n"
                          + _Msg->get_payload(), MessageHandler::DEBUG_L3);)
     InputQueue_->enqueue({ConHdlToID_[_Connection], _Msg->get_payload()});
 }
@@ -98,10 +97,11 @@ bool NetworkManager::onValidate(websocketpp::connection_hdl _Connection)
     // Store connection data and a unique id for further
     // assignment of message queries
     Connections_.insert(_Connection);
-    ConIDToHdl_[++ConnectionIDCounter_] = _Connection;
-    ConHdlToID_[_Connection] = ConnectionIDCounter_;
+    auto e = Reg_.create();
+    ConIDToHdl_[e] = _Connection;
+    ConHdlToID_[_Connection] = e;
 
-    DBLK(Messages.report("net", "Connection ID is: "+std::to_string(ConnectionIDCounter_), MessageHandler::DEBUG_L1);)
+    DBLK(Messages.report("net", "Connection ID is: "+std::to_string(entt::id_type(e)), MessageHandler::DEBUG_L1);)
     DBLK(Messages.report("net", std::to_string(Connections_.size())+ " open connection(s).", MessageHandler::DEBUG_L2);)
 
     return true;

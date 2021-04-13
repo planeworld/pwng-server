@@ -56,8 +56,8 @@ class NetworkManager
         std::set<websocketpp::connection_hdl, std::owner_less<websocketpp::connection_hdl>> Connections_;
         std::mutex ConnectionsLock_;
 
-        std::map<websocketpp::connection_hdl, ConIDType, std::owner_less<websocketpp::connection_hdl>> ConHdlToID_;
-        std::map<ConIDType, websocketpp::connection_hdl> ConIDToHdl_;
+        std::map<websocketpp::connection_hdl, entt::entity, std::owner_less<websocketpp::connection_hdl>> ConHdlToID_;
+        std::map<entt::entity, websocketpp::connection_hdl> ConIDToHdl_;
 
         //--- Threads ---//
         std::thread ThreadSender_;
@@ -65,10 +65,6 @@ class NetworkManager
 
         bool IsRunning_{true};
 
-        // No need to worry about a specialized id class that frees up unused
-        // ids. With uint64 the server could run 585 billion years with one
-        // connection per second without overflowing
-        static ConIDType ConnectionIDCounter_;
 };
 
 #endif // NETWORK_MANAGER_HPP
