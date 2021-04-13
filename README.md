@@ -29,7 +29,7 @@ Based on my positive experiences from [BattleSub](https://github.com/bfeldpw/bat
 
 ## Behind the scenes
 
-## EnTT
+### EnTT
 
 At the server side, EnTT is used for two main purposes at the moment:
 1. Each object, e.g. a star, is an entity with several components. This might be metadata such as temperature and stellar class or kinematics/kinetics information like position, velocity, acceleration. Objects with the latter pass the integrator system, which integrates all acceleration and subsequently velocities to their final position.
