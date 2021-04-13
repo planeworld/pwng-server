@@ -10,6 +10,7 @@
 
 #include "gravity_system.hpp"
 #include "integrator_system.hpp"
+#include "network_message.hpp"
 
 #include <nlohmann/json.hpp>
 
@@ -27,10 +28,10 @@ class SimulationManager
 
         bool isRunning() const {return IsRunning_;}
 
-        void init(moodycamel::ConcurrentQueue<std::string>* const _InputQueue,
-                  moodycamel::ConcurrentQueue<std::string>* const _OutputQueue);
+        void init(moodycamel::ConcurrentQueue<NetworkMessage>* const _InputQueue,
+                  moodycamel::ConcurrentQueue<NetworkMessage>* const _OutputQueue);
 
-        void queueGalaxyData() const;
+        void queueGalaxyData(ConIDType _ID) const;
         void start();
         void stop();
 
@@ -42,8 +43,8 @@ class SimulationManager
         GravitySystem    SysGravity_;
         IntegratorSystem SysIntegrator_;
 
-        moodycamel::ConcurrentQueue<std::string>* InputQueue_;
-        moodycamel::ConcurrentQueue<std::string>* OutputQueue_;
+        moodycamel::ConcurrentQueue<NetworkMessage>* InputQueue_;
+        moodycamel::ConcurrentQueue<NetworkMessage>* OutputQueue_;
 
         std::uint32_t SimStepSize_{10};
 

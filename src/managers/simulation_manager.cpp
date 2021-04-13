@@ -24,8 +24,8 @@ SimulationManager::~SimulationManager()
     Reg_.destroy(view.begin(), view.end());
 }
 
-void SimulationManager::init(moodycamel::ConcurrentQueue<std::string>* const _InputQueue,
-                             moodycamel::ConcurrentQueue<std::string>* const _OutputQueue)
+void SimulationManager::init(moodycamel::ConcurrentQueue<NetworkMessage>* const _InputQueue,
+                             moodycamel::ConcurrentQueue<NetworkMessage>* const _OutputQueue)
 {
     auto& Messages = Reg_.ctx<MessageHandler>();
 
@@ -145,7 +145,7 @@ void SimulationManager::init(moodycamel::ConcurrentQueue<std::string>* const _In
     // this->start();
 }
 
-void SimulationManager::queueGalaxyData() const
+void SimulationManager::queueGalaxyData(ConIDType _ID) const
 {
     Reg_.group<VelocityComponent,
             PositionComponent>(entt::get<
@@ -173,7 +173,7 @@ void SimulationManager::queueGalaxyData() const
                 {"vx", _v.v(0)}, {"vy", _v.v(1)},
                 {"px", _p.v(0)}, {"py", _p.v(1)}}}
             };
-            OutputQueue_->enqueue(j.dump(4));
+            OutputQueue_->enqueue({_ID, j.dump(4)});
         });
 }
 
@@ -239,7 +239,7 @@ void SimulationManager::run()
             {"t_phy", PhysicsTimer.elapsed()},
             {"t_queue_out", QueueOutTimer.elapsed()}}}
         };
-        OutputQueue_->enqueue(j.dump(4));
+        OutputQueue_->enqueue({1u, j.dump(4)});
 
         SimulationTimer.stop();
         if (SimStepSize_ - SimulationTimer.elapsed_ms() > 0.0)

@@ -3,8 +3,10 @@
 #include "message_handler.hpp"
 #include "timer.hpp"
 
-bool NetworkManager::init(moodycamel::ConcurrentQueue<std::string>* const _InputQueue,
-                          moodycamel::ConcurrentQueue<std::string>* const _OutputQueue,
+ConIDType NetworkManager::ConnectionIDCounter_{0};
+
+bool NetworkManager::init(moodycamel::ConcurrentQueue<NetworkMessage>* const _InputQueue,
+                          moodycamel::ConcurrentQueue<NetworkMessage>* const _OutputQueue,
                           int _Port)
 {
     auto& Messages = Reg_.ctx<MessageHandler>();
@@ -58,9 +60,15 @@ void NetworkManager::onClose(websocketpp::connection_hdl _Connection)
     auto& Messages = Reg_.ctx<MessageHandler>();
 
     std::lock_guard<std::mutex> Lock(ConnectionsLock_);
+
+    auto ID = ConHdlToID_[_Connection];
     Connections_.erase(_Connection);
+    ConIDToHdl_.erase(ID);
+    ConHdlToID_.erase(_Connection);
 
     Messages.report("net", "Connection to client closed", MessageHandler::INFO);
+
+    DBLK(Messages.report("net", "Connection ID was: "+std::to_string(ID), MessageHandler::DEBUG_L1);)
     DBLK(Messages.report("net", std::to_string(Connections_.size())+ " open connections.", MessageHandler::DEBUG_L2);)
 }
 
@@ -68,8 +76,10 @@ void NetworkManager::onMessage(websocketpp::connection_hdl _Connection, ServerTy
 {
     auto& Messages = Reg_.ctx<MessageHandler>();
 
-    DBLK(Messages.report("net", "Enqueueing incoming message:\n"+_Msg->get_payload(), MessageHandler::DEBUG_L3);)
-    InputQueue_->enqueue(_Msg->get_payload());
+    DBLK(Messages.report("net", "Enqueueing incoming message from ID: "
+                         + std::to_string(ConHdlToID_[_Connection])+"\n"
+                         + _Msg->get_payload(), MessageHandler::DEBUG_L3);)
+    InputQueue_->enqueue({ConHdlToID_[_Connection], _Msg->get_payload()});
 }
 
 bool NetworkManager::onValidate(websocketpp::connection_hdl _Connection)
@@ -81,12 +91,17 @@ bool NetworkManager::onValidate(websocketpp::connection_hdl _Connection)
     websocketpp::uri_ptr Uri = Connection->get_uri();
 
     DBLK(Messages.report("net", "Query string: " + Uri->get_query(), MessageHandler::DEBUG_L1);)
-
     Messages.report("net", "Connection validated", MessageHandler::INFO);
-    std::lock_guard<std::mutex> Lock(ConnectionsLock_);
-    // Connections_.insert({++ConnectionID_, _Connection});
-    Connections_.insert(_Connection);
 
+    std::lock_guard<std::mutex> Lock(ConnectionsLock_);
+
+    // Store connection data and a unique id for further
+    // assignment of message queries
+    Connections_.insert(_Connection);
+    ConIDToHdl_[++ConnectionIDCounter_] = _Connection;
+    ConHdlToID_[_Connection] = ConnectionIDCounter_;
+
+    DBLK(Messages.report("net", "Connection ID is: "+std::to_string(ConnectionIDCounter_), MessageHandler::DEBUG_L1);)
     DBLK(Messages.report("net", std::to_string(Connections_.size())+ " open connection(s).", MessageHandler::DEBUG_L2);)
 
     return true;
@@ -129,19 +144,26 @@ void NetworkManager::run()
             }
         )
 
-        std::string Message;
+        NetworkMessage Message;
         while (OutputQueue_->try_dequeue(Message))
         {
-            // auto it = Connections_.find(ConnectionID_);
-            for (const auto& Con : Connections_)
+            auto Con = ConIDToHdl_[Message.ID];
+            websocketpp::lib::error_code ErrorCode;
+            Server_.send(Con, Message.Payload, websocketpp::frame::opcode::text, ErrorCode);
+            if (ErrorCode)
             {
-                websocketpp::lib::error_code ErrorCode;
-                Server_.send(Con, Message, websocketpp::frame::opcode::text, ErrorCode);
-                if (ErrorCode)
-                {
-                    Messages.report("net", "Sending failed: " + ErrorCode.message());
-                }
+                Messages.report("net", "Sending failed: " + ErrorCode.message());
             }
+
+            // for (const auto& Con : Connections_)
+            // {
+            //     websocketpp::lib::error_code ErrorCode;
+            //     Server_.send(Con, Message.Payload, websocketpp::frame::opcode::text, ErrorCode);
+            //     if (ErrorCode)
+            //     {
+            //         Messages.report("net", "Sending failed: " + ErrorCode.message());
+            //     }
+            // }
         }
         NetworkTimer.stop();
         if (NetworkingStepSize_ - NetworkTimer.elapsed_ms() > 0.0)
@@ -164,6 +186,7 @@ bool NetworkManager::stop()
         return false;
     }
 
+    std::lock_guard<std::mutex> Lock(ConnectionsLock_);
     for (auto Con : Connections_)
     {
         websocketpp::lib::error_code ErrorCode;

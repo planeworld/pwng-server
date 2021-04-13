@@ -16,6 +16,7 @@ set(HEADERS
   systems/integrator_system.hpp
   math_types.hpp
   message_handler.hpp
+  network_message.hpp
   star_definitions.hpp
   timer.hpp
 )

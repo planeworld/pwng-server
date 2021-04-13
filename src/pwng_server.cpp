@@ -75,8 +75,8 @@ int main(int argc, char* argv[])
     int Port = parseArguments(argc, argv, Reg);
     if (Port != PWNG_ABORT_STARTUP)
     {
-        moodycamel::ConcurrentQueue<std::string> InputQueue;
-        moodycamel::ConcurrentQueue<std::string> OutputQueue;
+        moodycamel::ConcurrentQueue<NetworkMessage> InputQueue;
+        moodycamel::ConcurrentQueue<NetworkMessage> OutputQueue;
 
         if (Network.init(&InputQueue, &OutputQueue, Port))
         {
@@ -86,12 +86,12 @@ int main(int argc, char* argv[])
             while (Network.isRunning() || Simulation.isRunning())
 
             {
-                std::string Message;
+                NetworkMessage Message;
                 while (InputQueue.try_dequeue(Message))
                 {
-                    DBLK(Messages.report("prg", "Dequeueing incoming message:\n"+Message, MessageHandler::DEBUG_L3);)
+                    DBLK(Messages.report("prg", "Dequeueing incoming message:\n"+Message.Payload, MessageHandler::DEBUG_L3);)
 
-                    json j = json::parse(Message);
+                    json j = json::parse(Message.Payload);
 
                     if (j["params"]["Message"] == "get_data")
                     {
@@ -102,8 +102,8 @@ int main(int argc, char* argv[])
                             {"result", "success"},
                             {"id", j["id"]}
                         };
-                        OutputQueue.enqueue(Result.dump(4));
-                        Simulation.queueGalaxyData();
+                        OutputQueue.enqueue({Message.ID, Result.dump(4)});
+                        Simulation.queueGalaxyData(Message.ID);
                     }
                     if (j["params"]["Message"] == "start_simulation")
                     {
@@ -114,7 +114,7 @@ int main(int argc, char* argv[])
                             {"result", "success"},
                             {"id", j["id"]}
                         };
-                        OutputQueue.enqueue(Result.dump(4));
+                        OutputQueue.enqueue({Message.ID, Result.dump(4)});
                         Simulation.start();
                     }
                     if (j["params"]["Message"] == "stop_simulation")
@@ -126,7 +126,7 @@ int main(int argc, char* argv[])
                             {"result", "success"},
                             {"id", j["id"]}
                         };
-                        OutputQueue.enqueue(Result.dump(4));
+                        OutputQueue.enqueue({Message.ID, Result.dump(4)});
                         Simulation.stop();
                     }
                     if (j["params"]["Message"] == "shutdown")
@@ -139,7 +139,7 @@ int main(int argc, char* argv[])
                             {"id", j["id"]}
                         };
                         Simulation.stop();
-                        OutputQueue.enqueue(Result.dump(4));
+                        OutputQueue.enqueue({Message.ID, Result.dump(4)});
                         Messages.report("prg", "Shutting down...", MessageHandler::INFO);
                         std::this_thread::sleep_for(std::chrono::seconds(2));
                         Network.stop();
