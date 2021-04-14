@@ -54,10 +54,6 @@ cd ../..
 
 echo "--- INSTALLING EIGEN ---"
 cd eigen
-
-# patch CMake version to avoid warning
-sed -i "1c cmake_minimum_required(VERSION 3.1)" CMakeLists.txt > /dev/null
-
 mkdir -p build
 cd build
 cmake .. -DCMAKE_INSTALL_PREFIX=../../../install -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=RELEASE > /dev/null
