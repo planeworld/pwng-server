@@ -26,6 +26,9 @@ git clone --branch v3.5.2 --depth 1 https://github.com/skypjack/entt.git > /dev/
 echo "--- CLONING JSON ---"
 git clone --branch v3.9.1 --depth 1 https://github.com/nlohmann/json.git > /dev/null
 
+echo "--- CLONING RAPID_JSON ---"
+git clone --branch v1.1.0 --depth 1 https://github.com/Tencent/rapidjson > /dev/null
+
 echo "--- CLONING CONCURRENT_QUEUE ---"
 git clone --branch v1.0.3 --depth 1 https://github.com/cameron314/concurrentqueue.git > /dev/null
 
@@ -99,6 +102,16 @@ cd json
 mkdir -p build
 cd build
 cmake .. -DCMAKE_INSTALL_PREFIX=../../../install -DBUILD_TESTING=OFF -DJSON_BuildTests=OFF -DCMAKE_BUILD_TYPE=RELEASE > /dev/null
+make -j8 install > /dev/null
+cd ../..
+
+# Install rapidjson
+
+echo "--- INSTALLING RAPID_JSON ---"
+cd rapidjson
+mkdir -p build
+cd build
+cmake .. -DCMAKE_INSTALL_PREFIX=../../../install -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=RELEASE -DRAPIDJSON_BUILD_DOC=OFF -DRAPIDJSON_BUILD_EXAMPLES=OFF -DRAPIDJSON_BUILD_TESTS=OFF > /dev/null
 make -j8 install > /dev/null
 cd ../..
 

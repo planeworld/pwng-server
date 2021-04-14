@@ -2,6 +2,9 @@
 
 #include <random>
 
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
+
 #include "message_handler.hpp"
 
 #include "acceleration_component.hpp"
@@ -145,6 +148,8 @@ void SimulationManager::init(moodycamel::ConcurrentQueue<NetworkMessage>* const 
 
 void SimulationManager::queueGalaxyData(entt::entity _ID) const
 {
+    using namespace rapidjson;
+
     Reg_.group<VelocityComponent,
             PositionComponent>(entt::get<
             AccelerationComponent,
@@ -154,24 +159,28 @@ void SimulationManager::queueGalaxyData(entt::entity _ID) const
             NameComponent>).each
         ([&](auto _e, const auto& _v, const auto& _p, const auto& _a, const auto& _b, const auto& _r, const auto& _s, const auto& _n)
         {
-            json j =
-            {
-                {"jsonrpc", "2.0"},
-                {"method", "sim_broadcast"},
-                {"params",
-                {{"eid", std::uint32_t(_e)},
-                {"ts", "insert timestamp here"},
-                {"name", _n.n},
-                {"m", _b.m},
-                {"i", _b.i},
-                {"r", _r.r},
-                {"sc", _s.SpectralClass},
-                {"t", _s.Temperature},
-                {"ax", _a.v(0)}, {"ay", _a.v(1)},
-                {"vx", _v.v(0)}, {"vy", _v.v(1)},
-                {"px", _p.v(0)}, {"py", _p.v(1)}}}
-            };
-            OutputQueue_->enqueue({_ID, j.dump(4)});
+            StringBuffer s;
+            Writer<StringBuffer> w(s);
+
+            w.StartObject();
+            w.Key("jsonrpc"); w.String("2.0");
+            w.Key("method"); w.String("sim_broadcast");
+            w.Key("params");
+                w.StartObject();
+                w.Key("eid"); w.Uint(entt::id_type(_e));
+                w.Key("ts"); w.String("insert timestamp here");
+                w.Key("name"); w.String(_n.n.c_str());
+                w.Key("m"); w.Double(_b.m);
+                w.Key("i"); w.Double(_b.i);
+                w.Key("r"); w.Double(_r.r);
+                w.Key("sc"); w.Uint(int(_s.SpectralClass));
+                w.Key("t"); w.Double(_s.Temperature);
+                w.Key("ax"); w.Double(_a.v(0)); w.Key("ay"); w.Double(_a.v(1));
+                w.Key("vx"); w.Double(_v.v(0)); w.Key("vy"); w.Double(_v.v(1));
+                w.Key("px"); w.Double(_p.v(0)); w.Key("py"); w.Double(_p.v(1));
+                w.EndObject();
+            w.EndObject();
+            OutputQueue_->enqueue({_ID, s.GetString()});
         });
 }
 
@@ -201,6 +210,8 @@ void SimulationManager::stop()
 
 void SimulationManager::run()
 {
+    using namespace rapidjson;
+
     auto& Messages = Reg_.ctx<MessageHandler>();
     Timer QueueOutTimer;
     Timer PhysicsTimer;
@@ -224,18 +235,22 @@ void SimulationManager::run()
         static double QueueOutTime{0.0};
         QueueOutTimer.start();
 
-        json j =
-        {
-            {"jsonrpc", "2.0"},
-            {"method", "sim_stats"},
-            {"params",
-            {
-            {"ts", "insert timestamp here"},
-            {"t_sim", SimulationTimer.split()},
-            {"t_phy", PhysicsTimer.elapsed()},
-            {"t_queue_out", QueueOutTime}}}
-        };
-        std::string Msg{j.dump(4)};
+        StringBuffer s;
+        Writer<StringBuffer> w(s);
+
+        w.StartObject();
+        w.Key("jsonrpc"); w.String("2.0");
+        w.Key("method"); w.String("sim_stats");
+        w.Key("params");
+            w.StartObject();
+            w.Key("ts"); w.String("insert timestamp here");
+            w.Key("t_sim"); w.Double(SimulationTimer.split());
+            w.Key("t_phy"); w.Double(PhysicsTimer.elapsed());
+            w.Key("t_queue_out"); w.Double(QueueOutTime);
+            w.EndObject();
+        w.EndObject();
+
+        std::string Msg{s.GetString()};
 
         Reg_.view<ServerStatusSubscriptionComponent>().each(
             [this, &Msg](auto _e)

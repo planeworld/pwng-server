@@ -1,6 +1,7 @@
 find_package(Threads)
 find_package(nlohmann_json 3.2.0 REQUIRED)
 find_package(Eigen3)
+find_package(RapidJSON)
 
 set(HEADERS
   ${LIB_NOISE_HEADERS}

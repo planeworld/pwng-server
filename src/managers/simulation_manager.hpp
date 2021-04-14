@@ -12,10 +12,6 @@
 #include "integrator_system.hpp"
 #include "network_message.hpp"
 
-#include <nlohmann/json.hpp>
-
-using json = nlohmann::json;
-
 class SimulationManager
 {
 
