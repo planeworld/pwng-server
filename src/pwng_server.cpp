@@ -4,7 +4,7 @@
 #include <argagg/argagg.hpp>
 #include <concurrentqueue/concurrentqueue.h>
 #include <entt/entity/registry.hpp>
-#include <nlohmann/json.hpp>
+#include <rapidjson/document.h>
 
 #include "message_handler.hpp"
 #include "network_manager.hpp"
@@ -12,8 +12,6 @@
 #include "simulation_manager.hpp"
 #include "subscription_components.hpp"
 #include "velocity_component.hpp"
-
-using json = nlohmann::json;
 
 constexpr int PWNG_ABORT_STARTUP = -1;
 
@@ -57,6 +55,8 @@ int parseArguments(int argc, char* argv[], entt::registry& _Reg)
 
 int main(int argc, char* argv[])
 {
+    using namespace rapidjson;
+
     entt::registry Reg;
 
     Reg.set<MessageHandler>();
@@ -92,65 +92,67 @@ int main(int argc, char* argv[])
                 {
                     DBLK(Messages.report("prg", "Dequeueing incoming message:\n"+Message.Payload, MessageHandler::DEBUG_L3);)
 
-                    json j = json::parse(Message.Payload);
+                    Document d;
+                    d.Parse(Message.Payload.c_str());
 
-                    if (j["params"]["Message"] == "get_data")
+
+                    if (d["params"]["Message"] == "get_data")
                     {
                         Messages.report("prg", "Static galaxy data requested", MessageHandler::INFO);
-                        json Result =
-                        {
-                            {"jsonrpc", "2.0"},
-                            {"result", "success"},
-                            {"id", j["id"]}
-                        };
-                        OutputQueue.enqueue({Message.ID, Result.dump(4)});
+                        // json Result =
+                        // {
+                        //     {"jsonrpc", "2.0"},
+                        //     {"result", "success"},
+                        //     {"id", j["id"]}
+                        // };
+                        // OutputQueue.enqueue({Message.ID, Result.dump(4)});
                         Simulation.queueGalaxyData(Message.ID);
                     }
-                    if (j["params"]["Message"] == "sub_server_stats")
+                    if (d["params"]["Message"] == "sub_server_stats")
                     {
                         Messages.report("prg", "Subscribe on server stats requested", MessageHandler::INFO);
                         Reg.emplace_or_replace<ServerStatusSubscriptionComponent>(Message.ID);
                     }
-                    if (j["params"]["Message"] == "unsub_server_stats")
+                    if (d["params"]["Message"] == "unsub_server_stats")
                     {
                         Messages.report("prg", "Unsubscribe on server stats requested", MessageHandler::INFO);
                         Reg.remove_if_exists<ServerStatusSubscriptionComponent>(Message.ID);
                     }
-                    if (j["params"]["Message"] == "start_simulation")
+                    if (d["params"]["Message"] == "start_simulation")
                     {
                         Messages.report("prg", "Simulation start requested", MessageHandler::INFO);
-                        json Result =
-                        {
-                            {"jsonrpc", "2.0"},
-                            {"result", "success"},
-                            {"id", j["id"]}
-                        };
-                        OutputQueue.enqueue({Message.ID, Result.dump(4)});
+                        // json Result =
+                        // {
+                        //     {"jsonrpc", "2.0"},
+                        //     {"result", "success"},
+                        //     {"id", j["id"]}
+                        // };
+                        // OutputQueue.enqueue({Message.ID, Result.dump(4)});
                         Simulation.start();
                     }
-                    if (j["params"]["Message"] == "stop_simulation")
+                    if (d["params"]["Message"] == "stop_simulation")
                     {
                         Messages.report("prg", "Simulation stop requested", MessageHandler::INFO);
-                        json Result =
-                        {
-                            {"jsonrpc", "2.0"},
-                            {"result", "success"},
-                            {"id", j["id"]}
-                        };
-                        OutputQueue.enqueue({Message.ID, Result.dump(4)});
+                        // json Result =
+                        // {
+                        //     {"jsonrpc", "2.0"},
+                        //     {"result", "success"},
+                        //     {"id", j["id"]}
+                        // };
+                        // OutputQueue.enqueue({Message.ID, Result.dump(4)});
                         Simulation.stop();
                     }
-                    if (j["params"]["Message"] == "shutdown")
+                    if (d["params"]["Message"] == "shutdown")
                     {
                         Messages.report("prg", "Server shutdown requested", MessageHandler::INFO);
-                        json Result =
-                        {
-                            {"jsonrpc", "2.0"},
-                            {"result", "success"},
-                            {"id", j["id"]}
-                        };
+                        // json Result =
+                        // {
+                        //     {"jsonrpc", "2.0"},
+                        //     {"result", "success"},
+                        //     {"id", j["id"]}
+                        // };
+                        // OutputQueue.enqueue({Message.ID, Result.dump(4)});
                         Simulation.stop();
-                        OutputQueue.enqueue({Message.ID, Result.dump(4)});
                         Messages.report("prg", "Shutting down...", MessageHandler::INFO);
                         std::this_thread::sleep_for(std::chrono::seconds(2));
                         Network.stop();
@@ -159,7 +161,6 @@ int main(int argc, char* argv[])
                 }
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
             }
-
         }
 
         Messages.report("prg", "Exit program", MessageHandler::INFO);

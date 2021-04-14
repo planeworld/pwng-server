@@ -23,9 +23,6 @@ git clone --branch v2.4.1 --depth 1 https://github.com/erincatto/box2d.git > /de
 echo "--- CLONING ENTT ---"
 git clone --branch v3.5.2 --depth 1 https://github.com/skypjack/entt.git > /dev/null
 
-echo "--- CLONING JSON ---"
-git clone --branch v3.9.1 --depth 1 https://github.com/nlohmann/json.git > /dev/null
-
 echo "--- CLONING RAPID_JSON ---"
 git clone --branch v1.1.0 --depth 1 https://github.com/Tencent/rapidjson > /dev/null
 
@@ -57,6 +54,10 @@ cd ../..
 
 echo "--- INSTALLING EIGEN ---"
 cd eigen
+
+# patch CMake version to avoid warning
+sed -i "1c cmake_minimum_required(VERSION 3.1)" CMakeLists.txt > /dev/null
+
 mkdir -p build
 cd build
 cmake .. -DCMAKE_INSTALL_PREFIX=../../../install -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=RELEASE > /dev/null
@@ -95,23 +96,17 @@ cmake .. -DCMAKE_INSTALL_PREFIX=../../../install -DBUILD_TESTING=OFF -DCMAKE_BUI
 make -j8 install > /dev/null
 cd ../..
 
-# Install json
-
-echo "--- INSTALLING JSON ---"
-cd json
-mkdir -p build
-cd build
-cmake .. -DCMAKE_INSTALL_PREFIX=../../../install -DBUILD_TESTING=OFF -DJSON_BuildTests=OFF -DCMAKE_BUILD_TYPE=RELEASE > /dev/null
-make -j8 install > /dev/null
-cd ../..
-
 # Install rapidjson
 
 echo "--- INSTALLING RAPID_JSON ---"
 cd rapidjson
+
+# patch CMake version to avoid warning
+sed -i "1c cmake_minimum_required(VERSION 3.1)" CMakeLists.txt > /dev/null
+
 mkdir -p build
 cd build
-cmake .. -DCMAKE_INSTALL_PREFIX=../../../install -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=RELEASE -DRAPIDJSON_BUILD_DOC=OFF -DRAPIDJSON_BUILD_EXAMPLES=OFF -DRAPIDJSON_BUILD_TESTS=OFF > /dev/null
+cmake .. -DCMAKE_INSTALL_PREFIX=../../../install -DCMAKE_BUILD_TYPE=RELEASE -DRAPIDJSON_BUILD_DOC=OFF -DRAPIDJSON_BUILD_EXAMPLES=OFF -DRAPIDJSON_BUILD_TESTS=OFF > /dev/null
 make -j8 install > /dev/null
 cd ../..
 

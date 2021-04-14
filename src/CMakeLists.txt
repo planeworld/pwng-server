@@ -1,5 +1,4 @@
 find_package(Threads)
-find_package(nlohmann_json 3.2.0 REQUIRED)
 find_package(Eigen3)
 find_package(RapidJSON)
 
@@ -40,7 +39,6 @@ target_include_directories(pwng-server PRIVATE "${PROJECT_SOURCE_DIR}/install/in
 target_link_libraries(pwng-server PRIVATE
   Eigen3::Eigen
   Threads::Threads
-  nlohmann_json::nlohmann_json
   ${BOX2D_LIBRARY_LOCAL}
   ${LIBNOISE_LIBRARY_LOCAL}
 )
