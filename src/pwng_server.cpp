@@ -10,6 +10,7 @@
 #include "network_manager.hpp"
 #include "position_component.hpp"
 #include "simulation_manager.hpp"
+#include "subscription_components.hpp"
 #include "velocity_component.hpp"
 
 using json = nlohmann::json;
@@ -104,6 +105,16 @@ int main(int argc, char* argv[])
                         };
                         OutputQueue.enqueue({Message.ID, Result.dump(4)});
                         Simulation.queueGalaxyData(Message.ID);
+                    }
+                    if (j["params"]["Message"] == "sub_server_stats")
+                    {
+                        Messages.report("prg", "Subscribe on server stats requested", MessageHandler::INFO);
+                        Reg.emplace_or_replace<ServerStatusSubscriptionComponent>(Message.ID);
+                    }
+                    if (j["params"]["Message"] == "unsub_server_stats")
+                    {
+                        Messages.report("prg", "Unsubscribe on server stats requested", MessageHandler::INFO);
+                        Reg.remove_if_exists<ServerStatusSubscriptionComponent>(Message.ID);
                     }
                     if (j["params"]["Message"] == "start_simulation")
                     {

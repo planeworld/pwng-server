@@ -78,6 +78,7 @@ void NetworkManager::onMessage(websocketpp::connection_hdl _Connection, ServerTy
     DBLK(Messages.report("net", "Enqueueing incoming message from ID: "
                          + std::to_string(entt::id_type(ConHdlToID_[_Connection]))+"\n"
                          + _Msg->get_payload(), MessageHandler::DEBUG_L3);)
+
     InputQueue_->enqueue({ConHdlToID_[_Connection], _Msg->get_payload()});
 }
 
@@ -155,15 +156,6 @@ void NetworkManager::run()
                 Messages.report("net", "Sending failed: " + ErrorCode.message());
             }
 
-            // for (const auto& Con : Connections_)
-            // {
-            //     websocketpp::lib::error_code ErrorCode;
-            //     Server_.send(Con, Message.Payload, websocketpp::frame::opcode::text, ErrorCode);
-            //     if (ErrorCode)
-            //     {
-            //         Messages.report("net", "Sending failed: " + ErrorCode.message());
-            //     }
-            // }
         }
         NetworkTimer.stop();
         if (NetworkingStepSize_ - NetworkTimer.elapsed_ms() > 0.0)

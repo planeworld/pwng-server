@@ -10,6 +10,7 @@
 #include "position_component.hpp"
 #include "radius_component.hpp"
 #include "star_definitions.hpp"
+#include "subscription_components.hpp"
 #include "timer.hpp"
 #include "velocity_component.hpp"
 
@@ -140,7 +141,6 @@ void SimulationManager::init(moodycamel::ConcurrentQueue<NetworkMessage>* const 
     DBLK(std::cout << std::endl;)
     Messages.report("sim", std::to_string(c) + " star systems generated", MessageHandler::INFO);
 
-    // this->start();
 }
 
 void SimulationManager::queueGalaxyData(entt::entity _ID) const
@@ -221,10 +221,8 @@ void SimulationManager::run()
 
         PhysicsTimer.stop();
 
-        static std::uint32_t c{0u};
-
+        static double QueueOutTime{0.0};
         QueueOutTimer.start();
-        QueueOutTimer.stop();
 
         json j =
         {
@@ -235,14 +233,23 @@ void SimulationManager::run()
             {"ts", "insert timestamp here"},
             {"t_sim", SimulationTimer.split()},
             {"t_phy", PhysicsTimer.elapsed()},
-            {"t_queue_out", QueueOutTimer.elapsed()}}}
+            {"t_queue_out", QueueOutTime}}}
         };
-        // OutputQueue_->enqueue({1u, j.dump(4)});
+        std::string Msg{j.dump(4)};
+
+        Reg_.view<ServerStatusSubscriptionComponent>().each(
+            [this, &Msg](auto _e)
+            {
+                OutputQueue_->enqueue({_e, Msg});
+            }
+        );
+
+        QueueOutTimer.stop();
+        QueueOutTime = QueueOutTimer.elapsed();
 
         SimulationTimer.stop();
         if (SimStepSize_ - SimulationTimer.elapsed_ms() > 0.0)
             std::this_thread::sleep_for(std::chrono::milliseconds(SimStepSize_ - int(SimulationTimer.elapsed_ms())));
-        ++c;
     }
 
     Messages.report("sim", "Simulation thread stopped successfully", MessageHandler::INFO);
