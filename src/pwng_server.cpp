@@ -78,11 +78,12 @@ int main(int argc, char* argv[])
     {
         moodycamel::ConcurrentQueue<NetworkMessage> InputQueue;
         moodycamel::ConcurrentQueue<NetworkMessage> OutputQueue;
+        moodycamel::ConcurrentQueue<NetworkMessage> QueueSimIn;
 
         if (Network.init(&InputQueue, &OutputQueue, Port))
         {
 
-            Simulation.init(&InputQueue, &OutputQueue);
+            Simulation.init(&QueueSimIn, &OutputQueue);
 
             while (Network.isRunning() || Simulation.isRunning())
 
@@ -94,66 +95,42 @@ int main(int argc, char* argv[])
 
                     Document d;
                     d.Parse(Message.Payload.c_str());
+                    auto& Command = d["params"]["Message"];
 
-
-                    if (d["params"]["Message"] == "get_data")
-                    {
-                        Messages.report("prg", "Static galaxy data requested", MessageHandler::INFO);
-                        // json Result =
-                        // {
-                        //     {"jsonrpc", "2.0"},
-                        //     {"result", "success"},
-                        //     {"id", j["id"]}
-                        // };
-                        // OutputQueue.enqueue({Message.ID, Result.dump(4)});
-                        Simulation.queueGalaxyData(Message.ID);
-                    }
-                    if (d["params"]["Message"] == "sub_server_stats")
+                    if (Command == "sub_server_stats")
                     {
                         Messages.report("prg", "Subscribe on server stats requested", MessageHandler::INFO);
                         Reg.emplace_or_replace<ServerStatusSubscriptionComponent>(Message.ID);
                     }
-                    if (d["params"]["Message"] == "unsub_server_stats")
+                    else if (Command == "unsub_server_stats")
                     {
                         Messages.report("prg", "Unsubscribe on server stats requested", MessageHandler::INFO);
                         Reg.remove_if_exists<ServerStatusSubscriptionComponent>(Message.ID);
                     }
-                    if (d["params"]["Message"] == "start_simulation")
+                    else if (Command == "get_data")
+                    {
+                        Messages.report("prg", "Static galaxy data requested", MessageHandler::INFO);
+                        DBLK(Messages.report("prg", "Appending request to simulation queue", MessageHandler::DEBUG_L1);)
+                        QueueSimIn.enqueue(Message);
+                    }
+                    else if (Command == "start_simulation")
                     {
                         Messages.report("prg", "Simulation start requested", MessageHandler::INFO);
-                        // json Result =
-                        // {
-                        //     {"jsonrpc", "2.0"},
-                        //     {"result", "success"},
-                        //     {"id", j["id"]}
-                        // };
-                        // OutputQueue.enqueue({Message.ID, Result.dump(4)});
-                        Simulation.start();
+                        DBLK(Messages.report("prg", "Appending request to simulation queue", MessageHandler::DEBUG_L1);)
+                        QueueSimIn.enqueue(Message);
                     }
-                    if (d["params"]["Message"] == "stop_simulation")
+                    else if (Command == "stop_simulation")
                     {
                         Messages.report("prg", "Simulation stop requested", MessageHandler::INFO);
-                        // json Result =
-                        // {
-                        //     {"jsonrpc", "2.0"},
-                        //     {"result", "success"},
-                        //     {"id", j["id"]}
-                        // };
-                        // OutputQueue.enqueue({Message.ID, Result.dump(4)});
-                        Simulation.stop();
+                        DBLK(Messages.report("prg", "Appending request to simulation queue", MessageHandler::DEBUG_L1);)
+                        QueueSimIn.enqueue(Message);
                     }
-                    if (d["params"]["Message"] == "shutdown")
+                    else if (Command == "shutdown")
                     {
                         Messages.report("prg", "Server shutdown requested", MessageHandler::INFO);
-                        // json Result =
-                        // {
-                        //     {"jsonrpc", "2.0"},
-                        //     {"result", "success"},
-                        //     {"id", j["id"]}
-                        // };
-                        // OutputQueue.enqueue({Message.ID, Result.dump(4)});
-                        Simulation.stop();
                         Messages.report("prg", "Shutting down...", MessageHandler::INFO);
+                        DBLK(Messages.report("prg", "Appending request to simulation queue", MessageHandler::DEBUG_L1);)
+                        QueueSimIn.enqueue(Message);
                         std::this_thread::sleep_for(std::chrono::seconds(2));
                         Network.stop();
                     }

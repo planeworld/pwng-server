@@ -2,6 +2,7 @@
 
 #include <random>
 
+#include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
 
@@ -26,14 +27,14 @@ SimulationManager::~SimulationManager()
     Reg_.destroy(view.begin(), view.end());
 }
 
-void SimulationManager::init(moodycamel::ConcurrentQueue<NetworkMessage>* const _InputQueue,
+void SimulationManager::init(moodycamel::ConcurrentQueue<NetworkMessage>* const _QueueSimIn,
                              moodycamel::ConcurrentQueue<NetworkMessage>* const _OutputQueue)
 {
     auto& Messages = Reg_.ctx<MessageHandler>();
 
     Messages.report("sim", "Initialising Simulation Manager", MessageHandler::INFO);
 
-    InputQueue_ = _InputQueue;
+    QueueSimIn_ = _QueueSimIn;
     OutputQueue_ = _OutputQueue;
 
     World_ = new b2World({0.0f, 0.0f});
@@ -144,6 +145,9 @@ void SimulationManager::init(moodycamel::ConcurrentQueue<NetworkMessage>* const 
     DBLK(std::cout << std::endl;)
     Messages.report("sim", std::to_string(c) + " star systems generated", MessageHandler::INFO);
 
+    Thread_ = std::thread(&SimulationManager::run, this);
+    Messages.report("sim", "Simulation thread started successfully", MessageHandler::INFO);
+
 }
 
 void SimulationManager::queueGalaxyData(entt::entity _ID) const
@@ -184,35 +188,12 @@ void SimulationManager::queueGalaxyData(entt::entity _ID) const
         });
 }
 
-void SimulationManager::start()
-{
-    if (!IsRunning_)
-    {
-        auto& Messages = Reg_.ctx<MessageHandler>();
-
-        IsRunning_ = true;
-        Thread_ = std::thread(&SimulationManager::run, this);
-        Messages.report("sim", "Simulation thread started successfully", MessageHandler::INFO);
-    }
-}
-
-void SimulationManager::stop()
-{
-    if (IsRunning_)
-    {
-        auto& Messages = Reg_.ctx<MessageHandler>();
-
-        IsRunning_ = false;
-        Thread_.join();
-        Messages.report("sim","Simulation stopped", MessageHandler::INFO);
-    }
-}
-
 void SimulationManager::run()
 {
     using namespace rapidjson;
 
     auto& Messages = Reg_.ctx<MessageHandler>();
+    Timer QueueInTimer;
     Timer QueueOutTimer;
     Timer PhysicsTimer;
     Timer SimulationTimer;
@@ -222,15 +203,33 @@ void SimulationManager::run()
     while (IsRunning_)
     {
         SimulationTimer.start();
-        PhysicsTimer.start();
-        // World_->Step(1.0f/60.0f, 8, 3);
-        // World2_->Step(1.0f/60.0f, 8, 3);
-        // World_->ShiftOrigin({20.0f, 10.0f});
 
-        SysGravity_.calculateForces();
-        SysIntegrator_.integrate(3600.0);
+        NetworkMessage Message;
 
-        PhysicsTimer.stop();
+        while (QueueSimIn_->try_dequeue(Message))
+        {
+            Document d;
+            d.Parse(Message.Payload.c_str());
+            auto& Command = d["params"]["Message"];
+
+            if (Command == "get_data") this->queueGalaxyData(Message.ID);
+            else if (Command == "start_simulation") this->start();
+            else if (Command == "stop_simulation")  this->stop();
+            else if (Command == "shutdown")  this->shutdown();
+        }
+
+        if (IsSimRunning_)
+        {
+            PhysicsTimer.start();
+            // World_->Step(1.0f/60.0f, 8, 3);
+            // World2_->Step(1.0f/60.0f, 8, 3);
+            // World_->ShiftOrigin({20.0f, 10.0f});
+
+            SysGravity_.calculateForces();
+            SysIntegrator_.integrate(3600.0);
+
+            PhysicsTimer.stop();
+        }
 
         static double QueueOutTime{0.0};
         QueueOutTimer.start();
@@ -247,6 +246,7 @@ void SimulationManager::run()
             w.Key("t_sim"); w.Double(SimulationTimer.split());
             w.Key("t_phy"); w.Double(PhysicsTimer.elapsed());
             w.Key("t_queue_out"); w.Double(QueueOutTime);
+            w.Key("stat_sim"); w.Bool(IsSimRunning_);
             w.EndObject();
         w.EndObject();
 
@@ -268,4 +268,39 @@ void SimulationManager::run()
     }
 
     Messages.report("sim", "Simulation thread stopped successfully", MessageHandler::INFO);
+}
+
+void SimulationManager::shutdown()
+{
+    if (IsRunning_)
+    {
+        auto& Messages = Reg_.ctx<MessageHandler>();
+
+        IsSimRunning_ = false;
+        IsRunning_ = false;
+        Thread_.join();
+        Messages.report("sim","Simulation shutdown", MessageHandler::INFO);
+    }
+}
+
+void SimulationManager::start()
+{
+    if (!IsSimRunning_)
+    {
+        auto& Messages = Reg_.ctx<MessageHandler>();
+
+        IsSimRunning_ = true;
+        Messages.report("sim","Simulation started", MessageHandler::INFO);
+    }
+}
+
+void SimulationManager::stop()
+{
+    if (IsSimRunning_)
+    {
+        auto& Messages = Reg_.ctx<MessageHandler>();
+
+        IsSimRunning_ = false;
+        Messages.report("sim","Simulation stopped", MessageHandler::INFO);
+    }
 }

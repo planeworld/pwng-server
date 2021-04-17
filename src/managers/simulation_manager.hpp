@@ -24,22 +24,23 @@ class SimulationManager
 
         bool isRunning() const {return IsRunning_;}
 
-        void init(moodycamel::ConcurrentQueue<NetworkMessage>* const _InputQueue,
+        void init(moodycamel::ConcurrentQueue<NetworkMessage>* const _QueueSimIn,
                   moodycamel::ConcurrentQueue<NetworkMessage>* const _OutputQueue);
 
-        void queueGalaxyData(entt::entity _ID) const;
-        void start();
-        void stop();
 
     private:
 
+        void queueGalaxyData(entt::entity _ID) const;
         void run();
+        void shutdown();
+        void start();
+        void stop();
 
-        entt::registry&   Reg_;
+        entt::registry&  Reg_;
         GravitySystem    SysGravity_;
         IntegratorSystem SysIntegrator_;
 
-        moodycamel::ConcurrentQueue<NetworkMessage>* InputQueue_;
+        moodycamel::ConcurrentQueue<NetworkMessage>* QueueSimIn_;
         moodycamel::ConcurrentQueue<NetworkMessage>* OutputQueue_;
 
         std::uint32_t SimStepSize_{10};
@@ -48,7 +49,8 @@ class SimulationManager
         b2World*    World2_;
         std::thread Thread_;
 
-        bool IsRunning_{false};
+        bool IsRunning_{true};
+        bool IsSimRunning_{false};
 };
 
 #endif // SIMULATION_MANAGER_HPP
