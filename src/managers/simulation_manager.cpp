@@ -109,8 +109,6 @@ void SimulationManager::init(moodycamel::ConcurrentQueue<NetworkMessage>* const 
 
             Reg_.emplace<PositionComponent>(e, Vec2Dd{r*std::cos(p)+DistGalaxyArmScatter(Generator)*r*Scatter,
                                                       r*std::sin(p)+DistGalaxyArmScatter(Generator)*r*Scatter});
-            Reg_.emplace<VelocityComponent>(e, Vec2Dd{0.0, 0.0});
-            Reg_.emplace<AccelerationComponent>(e, Vec2Dd{0.0, 0.0});
             Reg_.emplace<BodyComponent>(e, StarMassDistribution[SpectralClass](Generator), 1.0);
             Reg_.emplace<StarDataComponent>(e, SpectralClassE(SpectralClass), StarTemperatureDistribution[SpectralClass](Generator));
             Reg_.emplace<NameComponent>(e, "Star_"+std::to_string(c));
@@ -134,8 +132,6 @@ void SimulationManager::init(moodycamel::ConcurrentQueue<NetworkMessage>* const 
         DBLK(std::cout << SpectralClass << " ";)
 
         Reg_.emplace<PositionComponent>(e, 0.5e22*r*Vec2Dd{std::cos(Phi),std::sin(Phi)});
-        Reg_.emplace<VelocityComponent>(e, Vec2Dd{0.0, 0.0});
-        Reg_.emplace<AccelerationComponent>(e, Vec2Dd{0.0, 0.0});
         Reg_.emplace<BodyComponent>(e, StarMassDistribution[SpectralClass](Generator), 1.0);
         Reg_.emplace<NameComponent>(e, "Star_"+std::to_string(c));
         Reg_.emplace<StarDataComponent>(e, SpectralClassE(SpectralClass), StarTemperatureDistribution[SpectralClass](Generator));
@@ -154,21 +150,19 @@ void SimulationManager::queueGalaxyData(entt::entity _ID) const
 {
     using namespace rapidjson;
 
-    Reg_.group<VelocityComponent,
-            PositionComponent>(entt::get<
-            AccelerationComponent,
-            BodyComponent,
-            RadiusComponent,
-            StarDataComponent,
-            NameComponent>).each
-        ([&](auto _e, const auto& _v, const auto& _p, const auto& _a, const auto& _b, const auto& _r, const auto& _s, const auto& _n)
+    Reg_.view<PositionComponent,
+              BodyComponent,
+              RadiusComponent,
+              StarDataComponent,
+              NameComponent>().each
+        ([&](auto _e, const auto& _p, const auto& _b, const auto& _r, const auto& _s, const auto& _n)
         {
             StringBuffer s;
             Writer<StringBuffer> w(s);
 
             w.StartObject();
             w.Key("jsonrpc"); w.String("2.0");
-            w.Key("method"); w.String("sim_broadcast");
+            w.Key("method"); w.String("galaxy_data");
             w.Key("params");
                 w.StartObject();
                 w.Key("eid"); w.Uint(entt::id_type(_e));
@@ -179,8 +173,6 @@ void SimulationManager::queueGalaxyData(entt::entity _ID) const
                 w.Key("r"); w.Double(_r.r);
                 w.Key("sc"); w.Uint(int(_s.SpectralClass));
                 w.Key("t"); w.Double(_s.Temperature);
-                w.Key("ax"); w.Double(_a.v(0)); w.Key("ay"); w.Double(_a.v(1));
-                w.Key("vx"); w.Double(_v.v(0)); w.Key("vy"); w.Double(_v.v(1));
                 w.Key("px"); w.Double(_p.v(0)); w.Key("py"); w.Double(_p.v(1));
                 w.EndObject();
             w.EndObject();
