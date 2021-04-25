@@ -20,7 +20,6 @@ class SimulationManager
         SimulationManager(entt::registry& _Reg) : Reg_(_Reg),
                                                   SysGravity_(_Reg),
                                                   SysIntegrator_(_Reg){}
-        ~SimulationManager();
 
         bool isRunning() const {return IsRunning_;}
 
@@ -30,6 +29,7 @@ class SimulationManager
 
     private:
 
+        void queueDynamicData(entt::entity _ID) const;
         void queueGalaxyData(entt::entity _ID) const;
         void run();
         void shutdown();

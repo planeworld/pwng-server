@@ -18,15 +18,6 @@
 #include "timer.hpp"
 #include "velocity_component.hpp"
 
-SimulationManager::~SimulationManager()
-{
-    auto view = Reg_.view<PositionComponent,
-                          VelocityComponent,
-                          AccelerationComponent,
-                          BodyComponent>();
-    Reg_.destroy(view.begin(), view.end());
-}
-
 void SimulationManager::init(moodycamel::ConcurrentQueue<NetworkMessage>* const _QueueSimIn,
                              moodycamel::ConcurrentQueue<NetworkMessage>* const _OutputQueue)
 {
@@ -45,28 +36,37 @@ void SimulationManager::init(moodycamel::ConcurrentQueue<NetworkMessage>* const 
     auto GroupVPAB = Reg_.group<VelocityComponent,PositionComponent>(
                                 entt::get<AccelerationComponent, BodyComponent>);
 
+    Vec2Dd SolarSystemPosition{0.0, 6.0e21};
+
     auto Earth = Reg_.create();
+    Reg_.emplace<SystemPositionComponent>(Earth, SolarSystemPosition);
     Reg_.emplace<PositionComponent>(Earth, Vec2Dd{0.0, -152.1e9});
     Reg_.emplace<VelocityComponent>(Earth, Vec2Dd{29.29e3, 0.0});
     Reg_.emplace<AccelerationComponent>(Earth, Vec2Dd{0.0, 0.0});
     Reg_.emplace<BodyComponent>(Earth, 5.972e24, 8.008e37);
+    Reg_.emplace<GravitatorComponent>(Earth);
     Reg_.emplace<NameComponent>(Earth, "Earth");
     Reg_.emplace<RadiusComponent>(Earth, 6378137.0);
 
     auto Moon = Reg_.create();
+    Reg_.emplace<SystemPositionComponent>(Moon, SolarSystemPosition);
     Reg_.emplace<PositionComponent>(Moon, Vec2Dd{384400.0e3, -152.1e9});
     Reg_.emplace<VelocityComponent>(Moon, Vec2Dd{29.29e3, 964.0});
     Reg_.emplace<AccelerationComponent>(Moon, Vec2Dd{0.0, 0.0});
     Reg_.emplace<BodyComponent>(Moon, 7.346e22, 1.0);
+    Reg_.emplace<GravitatorComponent>(Moon);
     Reg_.emplace<NameComponent>(Moon, "Moon");
     Reg_.emplace<RadiusComponent>(Moon, 1737.0e3);
 
     auto Sun = Reg_.create();
-    Reg_.emplace<PositionComponent>(Sun, Vec2Dd{0.0, 0.0});
-    Reg_.emplace<VelocityComponent>(Sun, Vec2Dd{0.0, 0.0});
-    Reg_.emplace<AccelerationComponent>(Sun, Vec2Dd{0.0, 0.0});
+    Reg_.emplace<SystemPositionComponent>(Sun, SolarSystemPosition);
+    // Reg_.emplace<PositionComponent>(Sun, Vec2Dd{0.0, 0.0});
+    // Reg_.emplace<VelocityComponent>(Sun, Vec2Dd{0.0, 0.0});
+    // Reg_.emplace<AccelerationComponent>(Sun, Vec2Dd{0.0, 0.0});
     Reg_.emplace<BodyComponent>(Sun, 1.9884e30, 1.0);
+    Reg_.emplace<GravitatorComponent>(Sun);
     Reg_.emplace<NameComponent>(Sun, "Sun");
+    Reg_.emplace<StarDataComponent>(Sun, SpectralClassE::G, 5778.0);
     Reg_.emplace<RadiusComponent>(Sun, 6.96342e8);
 
     std::mt19937 Generator;
@@ -80,7 +80,6 @@ void SimulationManager::init(moodycamel::ConcurrentQueue<NetworkMessage>* const 
     Messages.report("sim", "Creating galaxy with " + std::to_string(Arms) + " spiral arms", MessageHandler::INFO);
     double Alpha = 1.0e22;
     double Scatter = 0.1; // 10%
-    // double GalaxyRadiusMax = Alpha/(0.5*MATH_PI);
     double GalaxyPhiMin = 0.2 * MATH_PI;
     double GalaxyPhiMax = 4.0 * MATH_PI;
     double GalaxyRadiusMax = Alpha / GalaxyPhiMin;
@@ -107,8 +106,8 @@ void SimulationManager::init(moodycamel::ConcurrentQueue<NetworkMessage>* const 
             if (SpectralClass > 6) SpectralClass = 6;
             DBLK(std::cout << SpectralClass << " ";)
 
-            Reg_.emplace<PositionComponent>(e, Vec2Dd{r*std::cos(p)+DistGalaxyArmScatter(Generator)*r*Scatter,
-                                                      r*std::sin(p)+DistGalaxyArmScatter(Generator)*r*Scatter});
+            Reg_.emplace<SystemPositionComponent>(e, Vec2Dd{r*std::cos(p)+DistGalaxyArmScatter(Generator)*r*Scatter,
+                                                            r*std::sin(p)+DistGalaxyArmScatter(Generator)*r*Scatter});
             Reg_.emplace<BodyComponent>(e, StarMassDistribution[SpectralClass](Generator), 1.0);
             Reg_.emplace<StarDataComponent>(e, SpectralClassE(SpectralClass), StarTemperatureDistribution[SpectralClass](Generator));
             Reg_.emplace<NameComponent>(e, "Star_"+std::to_string(c));
@@ -131,7 +130,7 @@ void SimulationManager::init(moodycamel::ConcurrentQueue<NetworkMessage>* const 
         if (SpectralClass > 6) SpectralClass = 6;
         DBLK(std::cout << SpectralClass << " ";)
 
-        Reg_.emplace<PositionComponent>(e, 0.5e22*r*Vec2Dd{std::cos(Phi),std::sin(Phi)});
+        Reg_.emplace<SystemPositionComponent>(e, 0.5e22*r*Vec2Dd{std::cos(Phi),std::sin(Phi)});
         Reg_.emplace<BodyComponent>(e, StarMassDistribution[SpectralClass](Generator), 1.0);
         Reg_.emplace<NameComponent>(e, "Star_"+std::to_string(c));
         Reg_.emplace<StarDataComponent>(e, SpectralClassE(SpectralClass), StarTemperatureDistribution[SpectralClass](Generator));
@@ -146,11 +145,45 @@ void SimulationManager::init(moodycamel::ConcurrentQueue<NetworkMessage>* const 
 
 }
 
+void SimulationManager::queueDynamicData(entt::entity _ID) const
+{
+    using namespace rapidjson;
+
+    Reg_.view<BodyComponent,
+              NameComponent,
+              PositionComponent,
+              RadiusComponent,
+              SystemPositionComponent>().each
+        ([&](auto _e, const auto& _b, const auto& _n, const auto& _p,
+                      const auto& _r, const auto& _s)
+        {
+            StringBuffer s;
+            Writer<StringBuffer> w(s);
+
+            w.StartObject();
+            w.Key("jsonrpc"); w.String("2.0");
+            w.Key("method"); w.String("bc_dynamic_data");
+            w.Key("params");
+                w.StartObject();
+                w.Key("eid"); w.Uint(entt::id_type(_e));
+                w.Key("ts"); w.String("insert timestamp here");
+                w.Key("name"); w.String(_n.n.c_str());
+                w.Key("m"); w.Double(_b.m);
+                w.Key("i"); w.Double(_b.i);
+                w.Key("r"); w.Double(_r.r);
+                w.Key("spx"); w.Double(_s.v(0)); w.Key("spy"); w.Double(_s.v(1));
+                w.Key("px"); w.Double(_p.v(0)); w.Key("py"); w.Double(_p.v(1));
+                w.EndObject();
+            w.EndObject();
+            OutputQueue_->enqueue({_ID, s.GetString()});
+        });
+}
+
 void SimulationManager::queueGalaxyData(entt::entity _ID) const
 {
     using namespace rapidjson;
 
-    Reg_.view<PositionComponent,
+    Reg_.view<SystemPositionComponent,
               BodyComponent,
               RadiusComponent,
               StarDataComponent,
@@ -173,7 +206,7 @@ void SimulationManager::queueGalaxyData(entt::entity _ID) const
                 w.Key("r"); w.Double(_r.r);
                 w.Key("sc"); w.Uint(int(_s.SpectralClass));
                 w.Key("t"); w.Double(_s.Temperature);
-                w.Key("px"); w.Double(_p.v(0)); w.Key("py"); w.Double(_p.v(1));
+                w.Key("spx"); w.Double(_p.v(0)); w.Key("spy"); w.Double(_p.v(1));
                 w.EndObject();
             w.EndObject();
             OutputQueue_->enqueue({_ID, s.GetString()});
@@ -205,9 +238,13 @@ void SimulationManager::run()
             auto& Command = d["params"]["Message"];
 
             if (Command == "get_data") this->queueGalaxyData(Message.ID);
+            else if (Command == "shutdown")  this->shutdown();
             else if (Command == "start_simulation") this->start();
             else if (Command == "stop_simulation")  this->stop();
-            else if (Command == "shutdown")  this->shutdown();
+            else if (Command == "sub_dynamic_data")
+            {
+                Reg_.emplace_or_replace<DynamicDataSubscriptionComponent>(Message.ID);
+            }
         }
 
         if (IsSimRunning_)
@@ -248,6 +285,12 @@ void SimulationManager::run()
             [this, &Msg](auto _e)
             {
                 OutputQueue_->enqueue({_e, Msg});
+            }
+        );
+        Reg_.view<DynamicDataSubscriptionComponent>().each(
+            [this](auto _e)
+            {
+                this->queueDynamicData(_e);
             }
         );
 

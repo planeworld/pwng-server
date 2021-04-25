@@ -5,4 +5,8 @@ struct ServerStatusSubscriptionComponent
 {
 };
 
+struct DynamicDataSubscriptionComponent
+{
+};
+
 #endif // SUBSCRIPTION_COMPONENTS_HPP

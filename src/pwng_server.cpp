@@ -97,6 +97,7 @@ int main(int argc, char* argv[])
                     d.Parse(Message.Payload.c_str());
                     auto& Command = d["params"]["Message"];
 
+                    // Server addressed commands
                     if (Command == "sub_server_stats")
                     {
                         Messages.report("prg", "Subscribe on server stats requested", MessageHandler::INFO);
@@ -107,11 +108,21 @@ int main(int argc, char* argv[])
                         Messages.report("prg", "Unsubscribe on server stats requested", MessageHandler::INFO);
                         Reg.remove_if_exists<ServerStatusSubscriptionComponent>(Message.ID);
                     }
+                    // Simulation addressed commands
                     else if (Command == "get_data")
                     {
                         Messages.report("prg", "Static galaxy data requested", MessageHandler::INFO);
                         DBLK(Messages.report("prg", "Appending request to simulation queue", MessageHandler::DEBUG_L1);)
                         QueueSimIn.enqueue(Message);
+                    }
+                    else if (Command == "shutdown")
+                    {
+                        Messages.report("prg", "Server shutdown requested", MessageHandler::INFO);
+                        Messages.report("prg", "Shutting down...", MessageHandler::INFO);
+                        DBLK(Messages.report("prg", "Appending request to simulation queue", MessageHandler::DEBUG_L1);)
+                        QueueSimIn.enqueue(Message);
+                        std::this_thread::sleep_for(std::chrono::seconds(2));
+                        Network.stop();
                     }
                     else if (Command == "start_simulation")
                     {
@@ -125,14 +136,11 @@ int main(int argc, char* argv[])
                         DBLK(Messages.report("prg", "Appending request to simulation queue", MessageHandler::DEBUG_L1);)
                         QueueSimIn.enqueue(Message);
                     }
-                    else if (Command == "shutdown")
+                    else if (Command == "sub_dynamic_data")
                     {
-                        Messages.report("prg", "Server shutdown requested", MessageHandler::INFO);
-                        Messages.report("prg", "Shutting down...", MessageHandler::INFO);
+                        Messages.report("prg", "Subscribe on dynamic data requested", MessageHandler::INFO);
                         DBLK(Messages.report("prg", "Appending request to simulation queue", MessageHandler::DEBUG_L1);)
                         QueueSimIn.enqueue(Message);
-                        std::this_thread::sleep_for(std::chrono::seconds(2));
-                        Network.stop();
                     }
 
                 }

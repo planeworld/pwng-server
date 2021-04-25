@@ -8,4 +8,9 @@ struct PositionComponent
     Vec2Dd v{0.0, 0.0};
 };
 
+struct SystemPositionComponent
+{
+    Vec2Dd v{0.0, 0.0};
+};
+
 #endif // POSITION_COMPONENT_HPP
