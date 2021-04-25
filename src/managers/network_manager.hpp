@@ -45,8 +45,8 @@ class NetworkManager
         std::stringstream ErrorStream_;
         std::stringstream MessageStream_;
 
-        moodycamel::ConcurrentQueue<NetworkMessage>* InputQueue_;
-        moodycamel::ConcurrentQueue<NetworkMessage>* OutputQueue_;
+        moodycamel::ConcurrentQueue<NetworkMessage>* InputQueue_{nullptr};
+        moodycamel::ConcurrentQueue<NetworkMessage>* OutputQueue_{nullptr};
 
         std::uint32_t NetworkingStepSize_{10};
 

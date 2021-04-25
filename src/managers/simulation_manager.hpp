@@ -40,8 +40,8 @@ class SimulationManager
         GravitySystem    SysGravity_;
         IntegratorSystem SysIntegrator_;
 
-        moodycamel::ConcurrentQueue<NetworkMessage>* QueueSimIn_;
-        moodycamel::ConcurrentQueue<NetworkMessage>* OutputQueue_;
+        moodycamel::ConcurrentQueue<NetworkMessage>* QueueSimIn_{nullptr};
+        moodycamel::ConcurrentQueue<NetworkMessage>* OutputQueue_{nullptr};
 
         std::uint32_t SimStepSize_{10};
 
