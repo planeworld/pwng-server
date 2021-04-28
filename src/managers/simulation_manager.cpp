@@ -15,8 +15,13 @@
 #include "radius_component.hpp"
 #include "star_definitions.hpp"
 #include "subscription_components.hpp"
-#include "timer.hpp"
 #include "velocity_component.hpp"
+
+
+SimulationManager::~SimulationManager()
+{
+    if (Thread_.joinable()) Thread_.join();
+}
 
 void SimulationManager::init(moodycamel::ConcurrentQueue<NetworkMessage>* const _QueueSimIn,
                              moodycamel::ConcurrentQueue<NetworkMessage>* const _OutputQueue)
@@ -213,24 +218,45 @@ void SimulationManager::queueGalaxyData(entt::entity _ID) const
         });
 }
 
+void SimulationManager::queueServerStats(entt::entity _ID)
+{
+    using namespace rapidjson;
+
+    StringBuffer s;
+    Writer<StringBuffer> w(s);
+
+    w.StartObject();
+    w.Key("jsonrpc"); w.String("2.0");
+    w.Key("method"); w.String("sim_stats");
+    w.Key("params");
+        w.StartObject();
+        w.Key("ts"); w.String("insert timestamp here");
+        w.Key("t_sim"); w.Double(SimulationTime_);
+        w.Key("t_phy"); w.Double(PhysicsTimer_.elapsed());
+        w.Key("t_queue_in"); w.Double(QueueInTimer_.elapsed());
+        w.Key("t_queue_out"); w.Double(QueueOutTime_);
+        w.Key("stat_sim"); w.Bool(IsSimRunning_);
+        w.EndObject();
+    w.EndObject();
+
+    OutputQueue_->enqueue({_ID, s.GetString()});
+}
+
 void SimulationManager::run()
 {
     using namespace rapidjson;
 
     auto& Messages = Reg_.ctx<MessageHandler>();
-    Timer QueueInTimer;
-    Timer QueueOutTimer;
-    Timer PhysicsTimer;
-    Timer SimulationTimer;
-
     Messages.report("sim", "Simulation Manager running", MessageHandler::INFO);
 
+    IsRunning_ = true;
     while (IsRunning_)
     {
-        SimulationTimer.start();
+        SimulationTimer_.start();
 
         NetworkMessage Message;
 
+        QueueInTimer_.start();
         while (QueueSimIn_->try_dequeue(Message))
         {
             Document d;
@@ -246,45 +272,25 @@ void SimulationManager::run()
                 Reg_.emplace_or_replace<DynamicDataSubscriptionComponent>(Message.ID);
             }
         }
+        QueueInTimer_.stop();
 
+        PhysicsTimer_.start();
         if (IsSimRunning_)
         {
-            PhysicsTimer.start();
             // World_->Step(1.0f/60.0f, 8, 3);
             // World2_->Step(1.0f/60.0f, 8, 3);
             // World_->ShiftOrigin({20.0f, 10.0f});
-
             SysGravity_.calculateForces();
             SysIntegrator_.integrate(3600.0);
-
-            PhysicsTimer.stop();
         }
+        PhysicsTimer_.stop();
 
-        static double QueueOutTime{0.0};
-        QueueOutTimer.start();
-
-        StringBuffer s;
-        Writer<StringBuffer> w(s);
-
-        w.StartObject();
-        w.Key("jsonrpc"); w.String("2.0");
-        w.Key("method"); w.String("sim_stats");
-        w.Key("params");
-            w.StartObject();
-            w.Key("ts"); w.String("insert timestamp here");
-            w.Key("t_sim"); w.Double(SimulationTimer.split());
-            w.Key("t_phy"); w.Double(PhysicsTimer.elapsed());
-            w.Key("t_queue_out"); w.Double(QueueOutTime);
-            w.Key("stat_sim"); w.Bool(IsSimRunning_);
-            w.EndObject();
-        w.EndObject();
-
-        std::string Msg{s.GetString()};
+        QueueOutTimer_.start();
 
         Reg_.view<ServerStatusSubscriptionComponent>().each(
-            [this, &Msg](auto _e)
+            [this](auto _e)
             {
-                OutputQueue_->enqueue({_e, Msg});
+                this->queueServerStats(_e);
             }
         );
         Reg_.view<DynamicDataSubscriptionComponent>().each(
@@ -294,12 +300,13 @@ void SimulationManager::run()
             }
         );
 
-        QueueOutTimer.stop();
-        QueueOutTime = QueueOutTimer.elapsed();
+        QueueOutTimer_.stop();
+        QueueOutTime_ = QueueOutTimer_.elapsed();
 
-        SimulationTimer.stop();
-        if (SimStepSize_ - SimulationTimer.elapsed_ms() > 0.0)
-            std::this_thread::sleep_for(std::chrono::milliseconds(SimStepSize_ - int(SimulationTimer.elapsed_ms())));
+        SimulationTimer_.stop();
+        SimulationTime_ = SimulationTimer_.elapsed();
+        if (SimStepSize_ - SimulationTimer_.elapsed_ms() > 0.0)
+            std::this_thread::sleep_for(std::chrono::milliseconds(SimStepSize_ - int(SimulationTimer_.elapsed_ms())));
     }
 
     Messages.report("sim", "Simulation thread stopped successfully", MessageHandler::INFO);
@@ -313,7 +320,6 @@ void SimulationManager::shutdown()
 
         IsSimRunning_ = false;
         IsRunning_ = false;
-        Thread_.join();
         Messages.report("sim","Simulation shutdown", MessageHandler::INFO);
     }
 }

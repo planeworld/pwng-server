@@ -11,6 +11,7 @@
 #include "gravity_system.hpp"
 #include "integrator_system.hpp"
 #include "network_message.hpp"
+#include "timer.hpp"
 
 class SimulationManager
 {
@@ -20,6 +21,7 @@ class SimulationManager
         SimulationManager(entt::registry& _Reg) : Reg_(_Reg),
                                                   SysGravity_(_Reg),
                                                   SysIntegrator_(_Reg){}
+        ~SimulationManager();
 
         bool isRunning() const {return IsRunning_;}
 
@@ -31,6 +33,7 @@ class SimulationManager
 
         void queueDynamicData(entt::entity _ID) const;
         void queueGalaxyData(entt::entity _ID) const;
+        void queueServerStats(entt::entity _ID);
         void run();
         void shutdown();
         void start();
@@ -43,13 +46,20 @@ class SimulationManager
         moodycamel::ConcurrentQueue<NetworkMessage>* QueueSimIn_{nullptr};
         moodycamel::ConcurrentQueue<NetworkMessage>* OutputQueue_{nullptr};
 
+        Timer QueueInTimer_;
+        Timer QueueOutTimer_;
+        Timer PhysicsTimer_;
+        Timer SimulationTimer_;
+        double QueueOutTime_{0.0};
+        double SimulationTime_{0.0};
+
         std::uint32_t SimStepSize_{10};
 
         b2World*    World_;
         b2World*    World2_;
         std::thread Thread_;
 
-        bool IsRunning_{true};
+        bool IsRunning_{false};
         bool IsSimRunning_{false};
 };
 
