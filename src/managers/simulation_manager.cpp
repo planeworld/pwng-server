@@ -170,7 +170,7 @@ void SimulationManager::queueDynamicData(entt::entity _ID) const
             w.Key("method"); w.String("bc_dynamic_data");
             w.Key("params");
                 w.StartObject();
-                w.Key("eid"); w.Uint(entt::id_type(_e));
+                w.Key("eid"); w.Uint(entt::to_integral(_e));
                 w.Key("ts"); w.String("insert timestamp here");
                 w.Key("name"); w.String(_n.n.c_str());
                 w.Key("m"); w.Double(_b.m);
@@ -203,7 +203,7 @@ void SimulationManager::queueGalaxyData(entt::entity _ID) const
             w.Key("method"); w.String("galaxy_data");
             w.Key("params");
                 w.StartObject();
-                w.Key("eid"); w.Uint(entt::id_type(_e));
+                w.Key("eid"); w.Uint(entt::to_integral(_e));
                 w.Key("ts"); w.String("insert timestamp here");
                 w.Key("name"); w.String(_n.n.c_str());
                 w.Key("m"); w.Double(_b.m);
@@ -306,7 +306,16 @@ void SimulationManager::run()
         SimulationTimer_.stop();
         SimulationTime_ = SimulationTimer_.elapsed();
         if (SimStepSize_ - SimulationTimer_.elapsed_ms() > 0.0)
+        {
             std::this_thread::sleep_for(std::chrono::milliseconds(SimStepSize_ - int(SimulationTimer_.elapsed_ms())));
+        }
+        else
+        {
+            Messages.report("sim", "Thread processing exceeds step time ("
+                            + std::to_string(SimulationTimer_.elapsed_ms())+"/"
+                            + std::to_string(SimStepSize_)+")ms",
+                            MessageHandler::WARNING);
+        }
     }
 
     Messages.report("sim", "Simulation thread stopped successfully", MessageHandler::INFO);

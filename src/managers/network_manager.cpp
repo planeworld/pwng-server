@@ -67,7 +67,7 @@ void NetworkManager::onClose(websocketpp::connection_hdl _Connection)
 
     Messages.report("net", "Connection to client closed", MessageHandler::INFO);
 
-    DBLK(Messages.report("net", "Connection ID was: "+std::to_string(entt::id_type(ID)), MessageHandler::DEBUG_L1);)
+    DBLK(Messages.report("net", "Connection ID was: "+std::to_string(entt::to_integral(ID)), MessageHandler::DEBUG_L1);)
     DBLK(Messages.report("net", std::to_string(Connections_.size())+ " open connections.", MessageHandler::DEBUG_L2);)
 }
 
@@ -76,7 +76,7 @@ void NetworkManager::onMessage(websocketpp::connection_hdl _Connection, ServerTy
     auto& Messages = Reg_.ctx<MessageHandler>();
 
     DBLK(Messages.report("net", "Enqueueing incoming message from ID: "
-                         + std::to_string(entt::id_type(ConHdlToID_[_Connection]))+"\n"
+                         + std::to_string(entt::to_integral(ConHdlToID_[_Connection]))+"\n"
                          + _Msg->get_payload(), MessageHandler::DEBUG_L3);)
 
     InputQueue_->enqueue({ConHdlToID_[_Connection], _Msg->get_payload()});
@@ -102,7 +102,7 @@ bool NetworkManager::onValidate(websocketpp::connection_hdl _Connection)
     ConIDToHdl_[e] = _Connection;
     ConHdlToID_[_Connection] = e;
 
-    DBLK(Messages.report("net", "Connection ID is: "+std::to_string(entt::id_type(e)), MessageHandler::DEBUG_L1);)
+    DBLK(Messages.report("net", "Connection ID is: "+std::to_string(entt::to_integral(e)), MessageHandler::DEBUG_L1);)
     DBLK(Messages.report("net", std::to_string(Connections_.size())+ " open connection(s).", MessageHandler::DEBUG_L2);)
 
     return true;
@@ -159,7 +159,16 @@ void NetworkManager::run()
         }
         NetworkTimer.stop();
         if (NetworkingStepSize_ - NetworkTimer.elapsed_ms() > 0.0)
+        {
             std::this_thread::sleep_for(std::chrono::milliseconds(NetworkingStepSize_ - int(NetworkTimer.elapsed_ms())));
+        }
+        else
+        {
+            Messages.report("net", "Thread processing exceeds step time ("
+                            + std::to_string(NetworkTimer.elapsed_ms())+"/"
+                            + std::to_string(NetworkingStepSize_)+")ms",
+                            MessageHandler::WARNING);
+        }
     }
     DBLK(Messages.report("net", "Sender thread stopped successfully", MessageHandler::DEBUG_L1);)
 }

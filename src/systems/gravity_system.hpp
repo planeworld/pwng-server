@@ -40,10 +40,7 @@ class GravitySystem
                 this->calculateInnerLoop(e, p.v, b.m, a.v);
             }
 
-            for (auto e : ViewPAB)
-            {
-                Reg_.remove<DoneComponent_>(e);
-            }
+            Reg_.clear<DoneComponent_>();
         }
 
     private:
@@ -72,8 +69,6 @@ class GravitySystem
 
                 _AccCompOuter -= Tmp * b.m;
                 a.v += Tmp * _BodyCompOuter;
-
-                // std::cout << int(_EntityOuter) << " - " << int(e) << std::endl;
             }
         }
 
