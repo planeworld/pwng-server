@@ -9,6 +9,7 @@ set(HEADERS
   components/name_component.hpp
   components/position_component.hpp
   components/radius_component.hpp
+  components/sim_components.hpp
   components/subscription_components.hpp
   components/velocity_component.hpp
   managers/network_manager.hpp

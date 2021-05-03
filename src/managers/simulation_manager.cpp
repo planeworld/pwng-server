@@ -14,6 +14,7 @@
 #include "position_component.hpp"
 #include "radius_component.hpp"
 #include "star_definitions.hpp"
+#include "sim_components.hpp"
 #include "subscription_components.hpp"
 #include "velocity_component.hpp"
 
@@ -49,7 +50,6 @@ void SimulationManager::init(moodycamel::ConcurrentQueue<NetworkMessage>* const 
     Reg_.emplace<VelocityComponent>(Earth, Vec2Dd{29.29e3, 0.0});
     Reg_.emplace<AccelerationComponent>(Earth, Vec2Dd{0.0, 0.0});
     Reg_.emplace<BodyComponent>(Earth, 5.972e24, 8.008e37);
-    Reg_.emplace<GravitatorComponent>(Earth);
     Reg_.emplace<NameComponent>(Earth, "Earth");
     Reg_.emplace<RadiusComponent>(Earth, 6378137.0);
 
@@ -59,20 +59,22 @@ void SimulationManager::init(moodycamel::ConcurrentQueue<NetworkMessage>* const 
     Reg_.emplace<VelocityComponent>(Moon, Vec2Dd{29.29e3, 964.0});
     Reg_.emplace<AccelerationComponent>(Moon, Vec2Dd{0.0, 0.0});
     Reg_.emplace<BodyComponent>(Moon, 7.346e22, 1.0);
-    Reg_.emplace<GravitatorComponent>(Moon);
     Reg_.emplace<NameComponent>(Moon, "Moon");
     Reg_.emplace<RadiusComponent>(Moon, 1737.0e3);
 
     auto Sun = Reg_.create();
     Reg_.emplace<SystemPositionComponent>(Sun, SolarSystemPosition);
-    // Reg_.emplace<PositionComponent>(Sun, Vec2Dd{0.0, 0.0});
-    // Reg_.emplace<VelocityComponent>(Sun, Vec2Dd{0.0, 0.0});
-    // Reg_.emplace<AccelerationComponent>(Sun, Vec2Dd{0.0, 0.0});
+    Reg_.emplace<PositionComponent>(Sun, Vec2Dd{0.0, 0.0});
+    Reg_.emplace<VelocityComponent>(Sun, Vec2Dd{0.0, 0.0});
+    Reg_.emplace<AccelerationComponent>(Sun, Vec2Dd{0.0, 0.0});
     Reg_.emplace<BodyComponent>(Sun, 1.9884e30, 1.0);
-    Reg_.emplace<GravitatorComponent>(Sun);
     Reg_.emplace<NameComponent>(Sun, "Sun");
     Reg_.emplace<StarDataComponent>(Sun, SpectralClassE::G, 5778.0);
     Reg_.emplace<RadiusComponent>(Sun, 6.96342e8);
+
+    auto SolarSystem = Reg_.create();
+    auto& SolarSystemObjects = Reg_.emplace<StarSystemComponent>(SolarSystem);
+    SolarSystemObjects.Objects = {Sun, Earth, Moon};
 
     std::mt19937 Generator;
     std::normal_distribution<double> DistGalaxyArmScatter(0.0, 1.0);

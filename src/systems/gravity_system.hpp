@@ -9,6 +9,7 @@
 #include "body_component.hpp"
 #include "math_types.hpp"
 #include "position_component.hpp"
+#include "sim_components.hpp"
 #include "velocity_component.hpp"
 
 class GravitySystem
@@ -20,63 +21,49 @@ class GravitySystem
 
         void calculateForces()
         {
-            auto ViewPAB = Reg_.view<PositionComponent, AccelerationComponent, BodyComponent, GravitatorComponent>();
+            Reg_.view<AccelerationComponent>().each
+            (
+                [](auto _e, auto& _a)
+                {
+                    _a.v = {0.0, 0.0};
+                }
+            );
+            Reg_.view<StarSystemComponent>().each(
+                [this](auto _e, const auto& _StarSystem)
+                {
+                    for (auto i=0u; i<_StarSystem.Objects.size(); ++i)
+                    {
+                        auto& a_i = Reg_.get<AccelerationComponent>(_StarSystem.Objects[i]);
+                        const auto& b_i = Reg_.get<BodyComponent>(_StarSystem.Objects[i]);
+                        const auto& p_i = Reg_.get<PositionComponent>(_StarSystem.Objects[i]);
 
-            for (auto e : ViewPAB)
-            {
-                auto& a = Reg_.get<AccelerationComponent>(e);
-                a={{0.0, 0.0}};
-            }
+                        for (auto j=i+1; j<_StarSystem.Objects.size(); ++j)
+                        {
+                            auto& a_j = Reg_.get<AccelerationComponent>(_StarSystem.Objects[j]);
+                            const auto& b_j = Reg_.get<BodyComponent>(_StarSystem.Objects[j]);
+                            const auto& p_j = Reg_.get<PositionComponent>(_StarSystem.Objects[j]);
 
-            for (auto e : ViewPAB)
-            {
-                const auto& p = ViewPAB.get<PositionComponent>(e);
-                const auto& b = ViewPAB.get<BodyComponent>(e);
-                auto& a = ViewPAB.get<AccelerationComponent>(e);
+                            Vec2Dd Diff = (p_i.v - p_j.v);
+                            double Rsqr = Diff.squaredNorm();
 
-                // Add dummy component to start inner loop with next entity
-                Reg_.emplace<DoneComponent_>(e);
+                            if (Rsqr < 1.0e6) Rsqr = 1.0e6;
 
-                this->calculateInnerLoop(e, p.v, b.m, a.v);
-            }
+                            Vec2Dd d = Diff / std::sqrt(Rsqr);
 
-            Reg_.clear<DoneComponent_>();
+                            constexpr double G = 6.6743e-11;
+                            Vec2Dd Tmp  = G / Rsqr * d;
+
+                            a_i.v -= Tmp * b_j.m;
+                            a_j.v += Tmp * b_i.m;
+                        }
+                    }
+                }
+            );
         }
 
     private:
 
-        void calculateInnerLoop(entt::entity _EntityOuter,
-                                const Vec2Dd& _PosCompOuter,
-                                double _BodyCompOuter,
-                                Vec2Dd& _AccCompOuter)
-        {
-            auto View = Reg_.view<PositionComponent, AccelerationComponent, BodyComponent>(entt::exclude<DoneComponent_>);
-            for (auto e : View)
-            {
-                const auto& p = View.get<PositionComponent>(e);
-                const auto& b = View.get<BodyComponent>(e);
-                auto& a = View.get<AccelerationComponent>(e);
-
-                Vec2Dd Diff = (_PosCompOuter - p.v);
-                double Rsqr = Diff.squaredNorm();
-
-                if (Rsqr < 1.0e6) Rsqr = 1.0e6;
-
-                Vec2Dd d = Diff / std::sqrt(Rsqr);
-
-                constexpr double G = 6.6743e-11;
-                Vec2Dd Tmp  = G / Rsqr * d;
-
-                _AccCompOuter -= Tmp * b.m;
-                a.v += Tmp * _BodyCompOuter;
-            }
-        }
-
         entt::registry& Reg_;
-
-        // Dummy component to allow for nested loops that do not iterate all
-        // objects from original view/group
-        struct DoneComponent_{};
 
 };
 
