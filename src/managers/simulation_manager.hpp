@@ -10,6 +10,7 @@
 
 #include "gravity_system.hpp"
 #include "integrator_system.hpp"
+#include "name_system.hpp"
 #include "network_message.hpp"
 #include "timer.hpp"
 
@@ -20,7 +21,8 @@ class SimulationManager
 
         SimulationManager(entt::registry& _Reg) : Reg_(_Reg),
                                                   SysGravity_(_Reg),
-                                                  SysIntegrator_(_Reg){}
+                                                  SysIntegrator_(_Reg),
+                                                  SysName_(_Reg){}
         ~SimulationManager();
 
         bool isRunning() const {return IsRunning_;}
@@ -42,6 +44,7 @@ class SimulationManager
         entt::registry&  Reg_;
         GravitySystem    SysGravity_;
         IntegratorSystem SysIntegrator_;
+        NameSystem       SysName_;
 
         moodycamel::ConcurrentQueue<NetworkMessage>* QueueSimIn_{nullptr};
         moodycamel::ConcurrentQueue<NetworkMessage>* OutputQueue_{nullptr};

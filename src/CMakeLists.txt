@@ -16,6 +16,7 @@ set(HEADERS
   managers/simulation_manager.hpp
   systems/gravity_system.hpp
   systems/integrator_system.hpp
+  systems/name_system.hpp
   math_types.hpp
   message_handler.hpp
   network_message.hpp
