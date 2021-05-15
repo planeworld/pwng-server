@@ -8,9 +8,13 @@
 ### What happened and what's next
 
 #### Desktop Client
-  - [x] 2021-05-15: Static simulation objects such as stars and star systems of the galaxy are now fully separated from dynamic objects (for the moment that are the manually added Sun, Earth and Moon.
-  - [x] 2021-05-15: The camera can hook on all objects, static and dynamic objects
-  - [ ] Use image pyramids and blur shaders to make the galaxy more smooth/dense looking
+- [x] 2021-05-15: Static simulation objects such as stars and star systems of the galaxy are now fully separated from dynamic objects (for the moment that are the manually added Sun, Earth and Moon.
+- [x] 2021-05-15: The camera can hook on all objects, static and dynamic objects
+- [ ] Use image pyramids and blur shaders to make the galaxy more smooth/dense looking
+
+#### Server
+
+- [ ] Procedurally generate planets based on Poisson distribution
 
 ## What is Planeworld
 
