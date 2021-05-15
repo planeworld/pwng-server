@@ -58,8 +58,8 @@ class SimulationManager
 
         std::uint32_t SimStepSize_{10};
 
-        b2World*    World_;
-        b2World*    World2_;
+        b2World*    World_{nullptr};
+        b2World*    World2_{nullptr};
         std::thread Thread_;
 
         bool IsRunning_{false};
