@@ -10,7 +10,7 @@ class NameSystem
 
     public:
 
-        NameSystem(entt::registry& _Reg) : Reg_(_Reg) {}
+        explicit NameSystem(entt::registry& _Reg) : Reg_(_Reg) {}
 
         void setName(entt::entity _e, const std::string& _Name)
         {

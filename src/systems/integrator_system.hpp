@@ -12,7 +12,7 @@ class IntegratorSystem
 
     public:
 
-        IntegratorSystem(entt::registry& _Reg) : Reg_(_Reg) {}
+        explicit IntegratorSystem(entt::registry& _Reg) : Reg_(_Reg) {}
 
         void integrate(const double _Step) const
         {

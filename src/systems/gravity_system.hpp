@@ -17,7 +17,7 @@ class GravitySystem
 
     public:
 
-        GravitySystem(entt::registry& _Reg) : Reg_(_Reg) {}
+        explicit GravitySystem(entt::registry& _Reg) : Reg_(_Reg) {}
 
         void calculateForces()
         {

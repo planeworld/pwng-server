@@ -19,10 +19,10 @@ class SimulationManager
 
     public:
 
-        SimulationManager(entt::registry& _Reg) : Reg_(_Reg),
-                                                  SysGravity_(_Reg),
-                                                  SysIntegrator_(_Reg),
-                                                  SysName_(_Reg){}
+        explicit SimulationManager(entt::registry& _Reg) : Reg_(_Reg),
+                                                           SysGravity_(_Reg),
+                                                           SysIntegrator_(_Reg),
+                                                           SysName_(_Reg){}
         ~SimulationManager();
 
         bool isRunning() const {return IsRunning_;}
