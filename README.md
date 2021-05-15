@@ -5,14 +5,14 @@
 
 ## Development
 
-### What happened and what's next?
+### What happened and what's next
 
 #### Desktop Client
-- [x] 2021-05-15: Static simulation objects such as stars and star systems of the galaxy are now fully separated from dynamic objects (for the moment that are the manually added Sun, Earth and Moon.
-- [x] 2021-05-15: The camera can hook on all objects, static and dynamic objects
-- [ ] Use image pyramids and blur shaders to make the galaxy more smooth/dense looking
+  - [x] 2021-05-15: Static simulation objects such as stars and star systems of the galaxy are now fully separated from dynamic objects (for the moment that are the manually added Sun, Earth and Moon.
+  - [x] 2021-05-15: The camera can hook on all objects, static and dynamic objects
+  - [ ] Use image pyramids and blur shaders to make the galaxy more smooth/dense looking
 
-## What is Planeworld?
+## What is Planeworld
 
 Planeworld is a galaxy/universe simulation engine (server component) and a [desktop client](https://github.com/planeworld/pwng-client) that can connect via websocket. The following screenshot (Figure 1) shows a procedurally generated galaxy with two spiral arms. Stars are are all within the main sequence (stellar classes M - O) for now. Stellar class distribution as well as masses, temperatures and radii are generated using probability distributions with respect to the information available.
 
@@ -34,7 +34,7 @@ Time went on, with rigid body dynamics came larger worlds, procedural generation
 
 So, sometime ago I just needed a break, started some new pet project [BattleSub](https://github.com/bfeldpw/battlesub) to get to know a little more about GPU shaders and fluid dynamics. I wanted to make fast progress and decided to use middlewares, such as [Magnum](https://github.com/mosra/magnum) and [EnTT](https://github.com/skypjack/entt). So...
 
-### Why Planeworld NG?
+### Why Planeworld NG
 
 Based on my positive experiences from [BattleSub](https://github.com/bfeldpw/battlesub) with [Magnum](https://github.com/mosra/magnum) and [EnTT](https://github.com/skypjack/entt) and decades of lessons learned concerning Planeworld, I decided to restart my passion project by consequently using a client server mechanic, and utilising EnTT and Magnum Graphics, as well as some others (credits will follow). While the server component doesn't rely on a graphical interface, check out Magnum Graphics used by the desktop client, too.
 
