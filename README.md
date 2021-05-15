@@ -1,7 +1,18 @@
+# Planeworld Next Generation (PWNG)
+
 ![build](https://github.com/planeworld/pwng-server/actions/workflows/ci.yml/badge.svg)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/363343886c1c4561ba600c900fa28e82)](https://www.codacy.com/gh/planeworld/pwng-server/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=planeworld/pwng-server&amp;utm_campaign=Badge_Grade)
 
-## What is Planeworld
+## Development
+
+### What happened and what's next?
+
+#### Desktop Client
+- [x] 2021-05-15: Static simulation objects such as stars and star systems of the galaxy are now fully separated from dynamic objects (for the moment that are the manually added Sun, Earth and Moon.
+- [x] 2021-05-15: The camera can hook on all objects, static and dynamic objects
+- [ ] Use image pyramids and blur shaders to make the galaxy more smooth/dense looking
+
+## What is Planeworld?
 
 Planeworld is a galaxy/universe simulation engine (server component) and a [desktop client](https://github.com/planeworld/pwng-client) that can connect via websocket. The following screenshot (Figure 1) shows a procedurally generated galaxy with two spiral arms. Stars are are all within the main sequence (stellar classes M - O) for now. Stellar class distribution as well as masses, temperatures and radii are generated using probability distributions with respect to the information available.
 
