@@ -1,20 +1,22 @@
 # Planeworld Next Generation (PWNG)
 
-![build](https://github.com/planeworld/pwng-server/actions/workflows/ci.yml/badge.svg)
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/363343886c1c4561ba600c900fa28e82)](https://www.codacy.com/gh/planeworld/pwng-server/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=planeworld/pwng-server&amp;utm_campaign=Badge_Grade)
-
 ## Development
 
+| Status | |
+|--------|-|
+| Server | ![build](https://github.com/planeworld/pwng-server/actions/workflows/ci.yml/badge.svg) [![Codacy Badge](https://app.codacy.com/project/badge/Grade/363343886c1c4561ba600c900fa28e82)](https://www.codacy.com/gh/planeworld/pwng-server/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=planeworld/pwng-server&amp;utm_campaign=Badge_Grade) ![lastcommit](https://img.shields.io/github/last-commit/planeworld/pwng-server) |
+| [Desktop Client](https://github.com/planeworld/pwng-client) | ![build](https://github.com/planeworld/pwng-client/actions/workflows/ci.yml/badge.svg) [![Codacy Badge](https://app.codacy.com/project/badge/Grade/8d8325f947844b9f86d0947d28b6692f)](https://www.codacy.com/gh/planeworld/pwng-client/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=planeworld/pwng-client&amp;utm_campaign=Badge_Grade) ![lastcommit](https://img.shields.io/github/last-commit/planeworld/pwng-client) |
+
 ### What happened and what's next
+
+#### Server
+
+- [ ] Procedurally generate planets based on Poisson distribution
 
 #### Desktop Client
 - [x] 2021-05-15: Static simulation objects such as stars and star systems of the galaxy are now fully separated from dynamic objects (for the moment that are the manually added Sun, Earth and Moon.
 - [x] 2021-05-15: The camera can hook on all objects, static and dynamic objects
 - [ ] Use image pyramids and blur shaders to make the galaxy more smooth/dense looking
-
-#### Server
-
-- [ ] Procedurally generate planets based on Poisson distribution
 
 ## What is Planeworld
 
