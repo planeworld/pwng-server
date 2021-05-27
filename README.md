@@ -14,9 +14,10 @@
 - [ ] Procedurally generate planets based on Poisson distribution
 
 #### Desktop Client
+- [ ] Use image pyramids and blur shaders to make the galaxy more smooth/dense looking
+- [x] 2021-05-27: The scene is now rendered to a texture via FBO. This allows for rendering to higher resolutions than window/screen size. Hence SSAA (super sampling anti aliasing) is achieved by applying a gaussian blur shader and then rendering the texture to native window/screen resolution. For now, the default value is targeted at 4xSSAA. The maximum texture size is queried and dynamically limits super sampling factor based on window resolution.
 - [x] 2021-05-15: Static simulation objects such as stars and star systems of the galaxy are now fully separated from dynamic objects (for the moment that are the manually added Sun, Earth and Moon.
 - [x] 2021-05-15: The camera can hook on all objects, static and dynamic objects
-- [ ] Use image pyramids and blur shaders to make the galaxy more smooth/dense looking
 
 ## What is Planeworld
 
