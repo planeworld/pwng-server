@@ -15,13 +15,14 @@
 
 #### Desktop Client
 - [ ] Use image pyramids and blur shaders to make the galaxy more smooth/dense looking
-- [x] 2021-05-27: The scene is now rendered to a texture via FBO. This allows for rendering to higher resolutions than window/screen size. Hence SSAA (super sampling anti aliasing) is achieved by applying a gaussian blur shader and then rendering the texture to native window/screen resolution. For now, the default value is targeted at 4xSSAA. The maximum texture size is queried and dynamically limits super sampling factor based on window resolution.
+- [x] 2021-05-30: Rendering to texture in a different resolution allows for lower resolutions in comparison to SSAA as well. There is now a GUI slider to choose the render resolution factor in the range [0.1, 4.0]. For factors > 1.0 the aforementioned blur shader is parameterized dynamically as a lowpass filter to ensure proper subsampling. A very simplistic LOD is implemented, too, but will be improved later on by replacing the stock shaders in order to reduce draw calls. 
+- [x] 2021-05-27: The scene is now rendered to a texture via FBO. This allows for rendering to higher resolutions than window/screen size. Hence, SSAA (super sampling anti aliasing) is achieved by applying a gaussian blur shader and then rendering the texture to native window/screen resolution. For now, the default value is targeted at 4xSSAA. The maximum texture size is queried and dynamically limits super sampling factor based on window resolution.
 - [x] 2021-05-15: Static simulation objects such as stars and star systems of the galaxy are now fully separated from dynamic objects (for the moment that are the manually added Sun, Earth and Moon.
 - [x] 2021-05-15: The camera can hook on all objects, static and dynamic objects
 
 ## What is Planeworld
 
-Planeworld is a galaxy/universe simulation engine (server component) and a [desktop client](https://github.com/planeworld/pwng-client) that can connect via websocket. The following screenshot (Figure 1) shows a procedurally generated galaxy with two spiral arms. Stars are are all within the main sequence (stellar classes M - O) for now. Stellar class distribution as well as masses, temperatures and radii are generated using probability distributions with respect to the information available.
+Planeworld is a 2D galaxy/universe simulation engine (server component) and a [desktop client](https://github.com/planeworld/pwng-client) that can connect via websocket. The following screenshot (Figure 1) shows a procedurally generated galaxy with two spiral arms. Stars are are all within the main sequence (stellar classes M - O) for now. Stellar class distribution as well as masses, temperatures and radii are generated using probability distributions with respect to the information available.
 
 ![galaxy representation](screenshots/galaxy_2021-04-09.png?raw=true)
 
