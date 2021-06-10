@@ -4,6 +4,7 @@
 #include <chrono>
 #include <memory>
 #include <thread>
+
 #include <box2d/box2d.h>
 #include <concurrentqueue/concurrentqueue.h>
 #include <entt/entity/registry.hpp>
@@ -34,7 +35,7 @@ class SimulationManager
     private:
 
         void queueDynamicData(entt::entity _ID) const;
-        void queueGalaxyData(entt::entity _ID) const;
+        void queueGalaxyData(entt::entity _ID, std::uint32_t _QueryID) const;
         void queueServerStats(entt::entity _ID);
         void run();
         void shutdown();

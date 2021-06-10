@@ -1,6 +1,9 @@
 #ifndef NAME_SYSTEM_HPP
 #define NAME_SYSTEM_HPP
 
+#include <string>
+#include <unordered_map>
+
 #include <entt/entity/registry.hpp>
 
 #include "name_component.hpp"
@@ -25,12 +28,14 @@ class NameSystem
             {
                 strcpy(CompName.Name, _Name.c_str());
             }
-
+            MapToEntityId_.insert({_Name, entt::to_integral(_e)});
         }
 
     private:
 
         entt::registry& Reg_;
+
+        std::unordered_map<std::string, entt::id_type> MapToEntityId_;
 
 };
 

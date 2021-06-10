@@ -10,12 +10,7 @@
 struct StarSystemComponent
 {
     std::vector<entt::entity> Objects;
+    int Seed{0};
 };
-
-// Definition of tags, i.e. components without any members
-// Could use entt::tag<"constexprstr"_hs> here, but I see
-// no benefit at the moment and it's more clear/readable
-// for me.
-
 
 #endif // SIM_COMPONENTS_HPP

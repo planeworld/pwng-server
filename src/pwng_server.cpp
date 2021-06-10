@@ -97,7 +97,7 @@ int main(int argc, char* argv[])
 
                     Document d;
                     d.Parse(Message.Payload.c_str());
-                    auto& Command = d["params"]["Message"];
+                    auto& Command = d["method"];
 
                     // Server addressed commands
                     if (Command == "sub_server_stats")

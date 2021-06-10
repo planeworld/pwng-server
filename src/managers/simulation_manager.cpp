@@ -72,11 +72,15 @@ void SimulationManager::init(moodycamel::ConcurrentQueue<NetworkMessage>* const 
     Reg_.emplace<RadiusComponent>(Sun, 6.96342e8);
     SysName_.setName(Sun, "Sun");
 
-    auto SolarSystem = Reg_.create();
-    auto& SolarSystemObjects = Reg_.emplace<StarSystemComponent>(SolarSystem);
-    SolarSystemObjects.Objects = {Sun, Earth, Moon};
-
     std::mt19937 Generator;
+
+    std::uniform_int_distribution Seeds;
+    auto SolarSystem = Reg_.create();
+    auto& SolarSystemComponent = Reg_.emplace<StarSystemComponent>(SolarSystem);
+    SolarSystemComponent.Objects = {Sun, Earth, Moon};
+    SolarSystemComponent.Seed = Seeds(Generator);
+    SysName_.setName(SolarSystem, "Solar System");
+
     std::normal_distribution<double> DistGalaxyArmScatter(0.0, 1.0);
     std::normal_distribution<double> DistGalaxyCenter(0.0, 0.5);
     std::poisson_distribution<int> DistGalaxyArms(3);
@@ -104,6 +108,12 @@ void SimulationManager::init(moodycamel::ConcurrentQueue<NetworkMessage>* const 
         {
             auto e = Reg_.create();
 
+            auto e_s = Reg_.create();
+            auto SystemComponent = Reg_.emplace<StarSystemComponent>(e_s);
+            SystemComponent.Objects = {e};
+            SystemComponent.Seed = Seeds(Generator);
+            SysName_.setName(e_s, "System_"+std::to_string(c));
+
             double r=Alpha/Phi;
             double p = Phi+2.0*MATH_PI/Arms*i;
             double r_n = 1.0-Phi/GalaxyPhiMax;
@@ -128,6 +138,12 @@ void SimulationManager::init(moodycamel::ConcurrentQueue<NetworkMessage>* const 
     for (auto Phi=0.0; Phi<2.0*MATH_PI; Phi+=0.001)
     {
         auto e = Reg_.create();
+
+        auto e_s = Reg_.create();
+        auto SystemComponent = Reg_.emplace<StarSystemComponent>(e_s);
+        SystemComponent.Objects = {e};
+        SystemComponent.Seed = Seeds(Generator);
+        SysName_.setName(e_s, "System_"+std::to_string(c));
 
         double r=std::abs(DistGalaxyCenter(Generator));
 
@@ -186,10 +202,11 @@ void SimulationManager::queueDynamicData(entt::entity _ID) const
         });
 }
 
-void SimulationManager::queueGalaxyData(entt::entity _ID) const
+void SimulationManager::queueGalaxyData(entt::entity _ID, std::uint32_t _QueryID) const
 {
     using namespace rapidjson;
 
+    // Queue stars of the galaxy
     Reg_.view<SystemPositionComponent,
               BodyComponent,
               RadiusComponent,
@@ -202,7 +219,7 @@ void SimulationManager::queueGalaxyData(entt::entity _ID) const
 
             w.StartObject();
             w.Key("jsonrpc"); w.String("2.0");
-            w.Key("method"); w.String("galaxy_data");
+            w.Key("method"); w.String("galaxy_data_stars");
             w.Key("params");
                 w.StartObject();
                 w.Key("eid"); w.Uint(entt::to_integral(_e));
@@ -218,6 +235,37 @@ void SimulationManager::queueGalaxyData(entt::entity _ID) const
             w.EndObject();
             OutputQueue_->enqueue({_ID, s.GetString()});
         });
+
+    // Queue star systems
+    Reg_.view<NameComponent, StarSystemComponent>().each
+        ([&](auto _e, const auto& _n, const auto& _s)
+        {
+            StringBuffer s;
+            Writer<StringBuffer> w(s);
+
+            w.StartObject();
+            w.Key("jsonrpc"); w.String("2.0");
+            w.Key("method"); w.String("galaxy_data_systems");
+            w.Key("params");
+                w.StartObject();
+                w.Key("eid"); w.Uint(entt::to_integral(_e));
+                w.Key("ts"); w.String("insert timestamp here");
+                w.Key("name"); w.String(_n.Name);
+                w.EndObject();
+            w.EndObject();
+            OutputQueue_->enqueue({_ID, s.GetString()});
+        });
+
+        StringBuffer s;
+        Writer<StringBuffer> w(s);
+
+        w.StartObject();
+        w.Key("jsonrpc"); w.String("2.0");
+        w.Key("result"); w.String("success");
+        w.Key("id"); w.Uint(_QueryID);
+        w.EndObject();
+        OutputQueue_->enqueue({_ID, s.GetString()});
+
 }
 
 void SimulationManager::queueServerStats(entt::entity _ID)
@@ -263,9 +311,9 @@ void SimulationManager::run()
         {
             Document d;
             d.Parse(Message.Payload.c_str());
-            auto& Command = d["params"]["Message"];
+            auto& Command = d["method"];
 
-            if (Command == "get_data") this->queueGalaxyData(Message.ID);
+            if (Command == "get_data") this->queueGalaxyData(Message.ID, d["id"].GetUint());
             else if (Command == "shutdown")  this->shutdown();
             else if (Command == "start_simulation") this->start();
             else if (Command == "stop_simulation")  this->stop();
