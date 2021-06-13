@@ -12,9 +12,13 @@
 #### Server
 
 - [ ] Procedurally generate planets based on Poisson distribution
+- [ ] Accept subscriptions to specific star systems
+- [ ] Correctly support JSON-RCP including requests, notifications, and results/errors
 
 #### Desktop Client
 - [ ] Use image pyramids and blur shaders to make the galaxy more smooth/dense looking
+- [ ] Correctly support JSON-RCP including requests, notifications, and results/errors
+- [x] 2021-06-13: The user can now subscribe and unsubscibe to star systems by name using the GUI. The request is send, but the server doesn't answer yet. Eventually, star system subscriptions will replace the current subscription to dynamic data. Automatic subscription will later subscibe based on viewport and zoom level.
 - [x] 2021-05-30: Rendering to texture in a different resolution allows for lower resolutions in comparison to SSAA as well. There is now a GUI slider to choose the render resolution factor in the range [0.1, 4.0]. For factors > 1.0 the aforementioned blur shader is parameterized dynamically as a lowpass filter to ensure proper subsampling. A very simplistic LOD is implemented, too, but will be improved later on by replacing the stock shaders in order to reduce draw calls. 
 - [x] 2021-05-27: The scene is now rendered to a texture via FBO. This allows for rendering to higher resolutions than window/screen size. Hence, SSAA (super sampling anti aliasing) is achieved by applying a gaussian blur shader and then rendering the texture to native window/screen resolution. For now, the default value is targeted at 4xSSAA. The maximum texture size is queried and dynamically limits super sampling factor based on window resolution.
 - [x] 2021-05-15: Static simulation objects such as stars and star systems of the galaxy are now fully separated from dynamic objects (for the moment that are the manually added Sun, Earth and Moon.
