@@ -3,8 +3,6 @@
 #include <random>
 
 #include <rapidjson/document.h>
-#include <rapidjson/stringbuffer.h>
-#include <rapidjson/writer.h>
 
 #include "message_handler.hpp"
 
@@ -168,9 +166,9 @@ void SimulationManager::init(moodycamel::ConcurrentQueue<NetworkMessage>* const 
 
 }
 
-void SimulationManager::queueDynamicData(entt::entity _ID) const
+void SimulationManager::queueDynamicData(entt::entity _ClientID) const
 {
-    using namespace rapidjson;
+    auto& Json = Reg_.ctx<JsonManager>();
 
     Reg_.view<BodyComponent,
               NameComponent,
@@ -180,31 +178,25 @@ void SimulationManager::queueDynamicData(entt::entity _ID) const
         ([&](auto _e, const auto& _b, const auto& _n, const auto& _p,
                       const auto& _r, const auto& _s)
         {
-            StringBuffer s;
-            Writer<StringBuffer> w(s);
 
-            w.StartObject();
-            w.Key("jsonrpc"); w.String("2.0");
-            w.Key("method"); w.String("bc_dynamic_data");
-            w.Key("params");
-                w.StartObject();
-                w.Key("eid"); w.Uint(entt::to_integral(_e));
-                w.Key("ts"); w.String("insert timestamp here");
-                w.Key("name"); w.String(_n.Name);
-                w.Key("m"); w.Double(_b.m);
-                w.Key("i"); w.Double(_b.i);
-                w.Key("r"); w.Double(_r.r);
-                w.Key("spx"); w.Double(_s.v(0)); w.Key("spy"); w.Double(_s.v(1));
-                w.Key("px"); w.Double(_p.v(0)); w.Key("py"); w.Double(_p.v(1));
-                w.EndObject();
-            w.EndObject();
-            OutputQueue_->enqueue({_ID, s.GetString()});
+            Json.createNotification("bc_dynamic_data")
+                .addParam("eid", entt::to_integral(_e))
+                .addParam("ts", "timestamp")
+                .addParam("name", _n.Name)
+                .addParam("m", _b.m)
+                .addParam("i", _b.i)
+                .addParam("r", _r.r)
+                .addParam("spx", _s.v(0))
+                .addParam("spy", _s.v(1))
+                .addParam("px", _p.v(0))
+                .addParam("py", _p.v(1))
+                .send(_ClientID);
         });
 }
 
-void SimulationManager::queueGalaxyData(entt::entity _ID, std::uint32_t _QueryID) const
+void SimulationManager::queueGalaxyData(entt::entity _ClientID, JsonManager::RequestIDType _ReqID) const
 {
-    using namespace rapidjson;
+    auto& Json = Reg_.ctx<JsonManager>();
 
     // Queue stars of the galaxy
     Reg_.view<SystemPositionComponent,
@@ -214,82 +206,47 @@ void SimulationManager::queueGalaxyData(entt::entity _ID, std::uint32_t _QueryID
               NameComponent>().each
         ([&](auto _e, const auto& _p, const auto& _b, const auto& _r, const auto& _s, const auto& _n)
         {
-            StringBuffer s;
-            Writer<StringBuffer> w(s);
-
-            w.StartObject();
-            w.Key("jsonrpc"); w.String("2.0");
-            w.Key("method"); w.String("galaxy_data_stars");
-            w.Key("params");
-                w.StartObject();
-                w.Key("eid"); w.Uint(entt::to_integral(_e));
-                w.Key("ts"); w.String("insert timestamp here");
-                w.Key("name"); w.String(_n.Name);
-                w.Key("m"); w.Double(_b.m);
-                w.Key("i"); w.Double(_b.i);
-                w.Key("r"); w.Double(_r.r);
-                w.Key("sc"); w.Uint(int(_s.SpectralClass));
-                w.Key("t"); w.Double(_s.Temperature);
-                w.Key("spx"); w.Double(_p.v(0)); w.Key("spy"); w.Double(_p.v(1));
-                w.EndObject();
-            w.EndObject();
-            OutputQueue_->enqueue({_ID, s.GetString()});
+            Json.createNotification("galaxy_data_stars")
+                .addParam("eid", entt::to_integral(_e))
+                .addParam("ts", "timestamp")
+                .addParam("name", _n.Name)
+                .addParam("m", _b.m)
+                .addParam("i", _b.i)
+                .addParam("r", _r.r)
+                .addParam("sc", std::uint32_t(_s.SpectralClass))
+                .addParam("t", _s.Temperature)
+                .addParam("spx", _p.v(0))
+                .addParam("spy", _p.v(1))
+                .send(_ClientID);
         });
 
     // Queue star systems
     Reg_.view<NameComponent, StarSystemComponent>().each
         ([&](auto _e, const auto& _n, const auto& _s)
         {
-            StringBuffer s;
-            Writer<StringBuffer> w(s);
-
-            w.StartObject();
-            w.Key("jsonrpc"); w.String("2.0");
-            w.Key("method"); w.String("galaxy_data_systems");
-            w.Key("params");
-                w.StartObject();
-                w.Key("eid"); w.Uint(entt::to_integral(_e));
-                w.Key("ts"); w.String("insert timestamp here");
-                w.Key("name"); w.String(_n.Name);
-                w.EndObject();
-            w.EndObject();
-            OutputQueue_->enqueue({_ID, s.GetString()});
+            Json.createNotification("galaxy_data_systems")
+                .addParam("eid", entt::to_integral(_e))
+                .addParam("ts", "timestamp")
+                .addParam("name", _n.Name)
+                .send(_ClientID);
         });
 
-        StringBuffer s;
-        Writer<StringBuffer> w(s);
-
-        w.StartObject();
-        w.Key("jsonrpc"); w.String("2.0");
-        w.Key("result"); w.String("success");
-        w.Key("id"); w.Uint(_QueryID);
-        w.EndObject();
-        OutputQueue_->enqueue({_ID, s.GetString()});
-
+    Json.createResult("success")
+        .send(_ClientID, _ReqID);
 }
 
-void SimulationManager::queueServerStats(entt::entity _ID)
+void SimulationManager::queueServerStats(entt::entity _ClientID)
 {
-    using namespace rapidjson;
+    auto& Json = Reg_.ctx<JsonManager>();
 
-    StringBuffer s;
-    Writer<StringBuffer> w(s);
-
-    w.StartObject();
-    w.Key("jsonrpc"); w.String("2.0");
-    w.Key("method"); w.String("sim_stats");
-    w.Key("params");
-        w.StartObject();
-        w.Key("ts"); w.String("insert timestamp here");
-        w.Key("t_sim"); w.Double(SimulationTime_);
-        w.Key("t_phy"); w.Double(PhysicsTimer_.elapsed());
-        w.Key("t_queue_in"); w.Double(QueueInTimer_.elapsed());
-        w.Key("t_queue_out"); w.Double(QueueOutTime_);
-        w.Key("stat_sim"); w.Bool(IsSimRunning_);
-        w.EndObject();
-    w.EndObject();
-
-    OutputQueue_->enqueue({_ID, s.GetString()});
+    Json.createNotification("sim_stats")
+        .addParam("ts", "timestamp")
+        .addParam("t_sim", SimulationTime_)
+        .addParam("t_phy", PhysicsTimer_.elapsed())
+        .addParam("t_queue_in", QueueInTimer_.elapsed())
+        .addParam("t_queue_out", QueueOutTime_)
+        .addParam("stat_sim", IsSimRunning_)
+        .send(_ClientID);
 }
 
 void SimulationManager::run()
@@ -313,13 +270,19 @@ void SimulationManager::run()
             d.Parse(Message.Payload.c_str());
             auto& Command = d["method"];
 
-            if (Command == "get_data") this->queueGalaxyData(Message.ID, d["id"].GetUint());
+            if (Command == "get_data") this->queueGalaxyData(Message.ClientID, d["id"].GetUint());
             else if (Command == "shutdown")  this->shutdown();
             else if (Command == "start_simulation") this->start();
             else if (Command == "stop_simulation")  this->stop();
             else if (Command == "sub_dynamic_data")
             {
-                Reg_.emplace_or_replace<DynamicDataSubscriptionComponent>(Message.ID);
+                Reg_.emplace_or_replace<DynamicDataSubscriptionComponent>(Message.ClientID);
+            }
+            else if (Command == "sub_system")
+            {
+                auto& Json = Reg_.ctx<JsonManager>();
+                Json.createResult(true)
+                    .send(Message.ClientID, d["id"].GetUint());
             }
         }
         QueueInTimer_.stop();

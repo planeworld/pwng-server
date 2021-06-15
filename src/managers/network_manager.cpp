@@ -148,7 +148,7 @@ void NetworkManager::run()
         NetworkMessage Message;
         while (OutputQueue_->try_dequeue(Message))
         {
-            auto Con = ConIDToHdl_[Message.ID];
+            auto Con = ConIDToHdl_[Message.ClientID];
             websocketpp::lib::error_code ErrorCode;
             Server_.send(Con, Message.Payload, websocketpp::frame::opcode::text, ErrorCode);
             if (ErrorCode)

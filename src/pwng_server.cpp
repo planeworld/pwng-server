@@ -6,6 +6,7 @@
 #include <entt/entity/registry.hpp>
 #include <rapidjson/document.h>
 
+#include "json_manager.hpp"
 #include "message_handler.hpp"
 #include "network_manager.hpp"
 #include "position_component.hpp"
@@ -60,16 +61,13 @@ int main(int argc, char* argv[])
     entt::registry Reg;
 
     Reg.set<MessageHandler>();
-    Reg.set<NetworkManager>(Reg);
-    Reg.set<SimulationManager>(Reg);
 
     auto& Messages = Reg.ctx<MessageHandler>();
-    auto& Network = Reg.ctx<NetworkManager>();
-    auto& Simulation = Reg.ctx<SimulationManager>();
 
     Messages.registerSource("net", "net");
     Messages.registerSource("prg", "prg");
     Messages.registerSource("sim", "sim");
+    Messages.registerSource("jsn", "jsn");
     Messages.setColored(true);
     Messages.setLevel(MessageHandler::DEBUG_L3);
 
@@ -79,6 +77,12 @@ int main(int argc, char* argv[])
         moodycamel::ConcurrentQueue<NetworkMessage> InputQueue;
         moodycamel::ConcurrentQueue<NetworkMessage> OutputQueue;
         moodycamel::ConcurrentQueue<NetworkMessage> QueueSimIn;
+
+        Reg.set<JsonManager>(Reg, &InputQueue, &OutputQueue);
+        Reg.set<NetworkManager>(Reg);
+        Reg.set<SimulationManager>(Reg);
+        auto& Network = Reg.ctx<NetworkManager>();
+        auto& Simulation = Reg.ctx<SimulationManager>();
 
         if (Network.init(&InputQueue, &OutputQueue, Port))
         {
@@ -103,12 +107,12 @@ int main(int argc, char* argv[])
                     if (Command == "sub_server_stats")
                     {
                         Messages.report("prg", "Subscribe on server stats requested", MessageHandler::INFO);
-                        Reg.emplace_or_replace<ServerStatusSubscriptionComponent>(Message.ID);
+                        Reg.emplace_or_replace<ServerStatusSubscriptionComponent>(Message.ClientID);
                     }
                     else if (Command == "unsub_server_stats")
                     {
                         Messages.report("prg", "Unsubscribe on server stats requested", MessageHandler::INFO);
-                        Reg.remove_if_exists<ServerStatusSubscriptionComponent>(Message.ID);
+                        Reg.remove_if_exists<ServerStatusSubscriptionComponent>(Message.ClientID);
                     }
                     // Simulation addressed commands
                     else if (Command == "get_data")
@@ -141,6 +145,12 @@ int main(int argc, char* argv[])
                     else if (Command == "sub_dynamic_data")
                     {
                         Messages.report("prg", "Subscribe on dynamic data requested", MessageHandler::INFO);
+                        DBLK(Messages.report("prg", "Appending request to simulation queue", MessageHandler::DEBUG_L1);)
+                        QueueSimIn.enqueue(Message);
+                    }
+                    else if (Command == "sub_system")
+                    {
+                        Messages.report("prg", "Subscribe on star system requested", MessageHandler::INFO);
                         DBLK(Messages.report("prg", "Appending request to simulation queue", MessageHandler::DEBUG_L1);)
                         QueueSimIn.enqueue(Message);
                     }

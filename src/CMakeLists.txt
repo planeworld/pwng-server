@@ -12,6 +12,7 @@ set(HEADERS
   components/sim_components.hpp
   components/subscription_components.hpp
   components/velocity_component.hpp
+  managers/json_manager.hpp
   managers/network_manager.hpp
   managers/simulation_manager.hpp
   systems/gravity_system.hpp
@@ -25,6 +26,7 @@ set(HEADERS
 )
 
 set(SOURCES
+  managers/json_manager.cpp
   managers/network_manager.cpp
   managers/simulation_manager.cpp
   pwng_server.cpp

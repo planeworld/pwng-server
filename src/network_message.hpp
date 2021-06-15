@@ -7,7 +7,7 @@
 
 struct NetworkMessage
 {
-    entt::entity ID;
+    entt::entity ClientID;
     std::string Payload;
 };
 

@@ -9,6 +9,7 @@
 #include <concurrentqueue/concurrentqueue.h>
 #include <entt/entity/registry.hpp>
 
+#include "json_manager.hpp"
 #include "gravity_system.hpp"
 #include "integrator_system.hpp"
 #include "name_system.hpp"
@@ -34,9 +35,9 @@ class SimulationManager
 
     private:
 
-        void queueDynamicData(entt::entity _ID) const;
-        void queueGalaxyData(entt::entity _ID, std::uint32_t _QueryID) const;
-        void queueServerStats(entt::entity _ID);
+        void queueDynamicData(entt::entity _ClientID) const;
+        void queueGalaxyData(entt::entity _ClientID, JsonManager::RequestIDType _ReqID) const;
+        void queueServerStats(entt::entity _ClientID);
         void run();
         void shutdown();
         void start();
