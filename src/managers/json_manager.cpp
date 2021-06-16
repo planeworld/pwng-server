@@ -106,15 +106,11 @@ JsonManager& JsonManager::createResult(const std::string& _r)
     return *this;
 }
 
-JsonManager::RequestIDType JsonManager::send(ClientIDType _ClientID, RequestIDType _ReqID)
+void JsonManager::finalise(RequestIDType _ReqID)
 {
-    DBLK(
-        auto& Messages = Reg_.ctx<MessageHandler>();
-        if (!IsMessageCreated_)
-            Messages.report("jsn", "No message created", MessageHandler::ERROR);
-
+    DBLK(this->checkCreate();
         IsMessageCreated_ = false;
-        IsMessageSend_ = true;
+        IsMessageFinalised_ = true;
     )
 
     if (MessageType_ == MessageType::REQUEST || MessageType_ == MessageType::NOTIFICATION)
@@ -123,33 +119,28 @@ JsonManager::RequestIDType JsonManager::send(ClientIDType _ClientID, RequestIDTy
         Writer_.Key("id");
         Writer_.Uint(++RequestID_);
     }
-    else if (MessageType_ == MessageType::RESULT || MessageType_ == MessageType::ERROR)
+    else // if (MessageType_ == MessageType::RESULT || MessageType_ == MessageType::ERROR)
     {
         Writer_.Key("id");
         Writer_.Uint(_ReqID);
     }
     Writer_.EndObject();
-    OutputQueue_->enqueue(NetworkMessage{_ClientID, Buffer_.GetString()});
-
-    Buffer_.Clear();
-    Writer_.Reset(Buffer_);
-
-    return RequestID_;
 }
 
 void JsonManager::createHeaderJsonRcp()
 {
+    Buffer_.Clear();
+    Writer_.Reset(Buffer_);
+
     DBLK(
         auto& Messages = Reg_.ctx<MessageHandler>();
-        if (!IsMessageSend_)
+        if (!IsMessageFinalised_)
         {
-            Messages.report("jsn", "Previous message was constructed but not send", MessageHandler::WARNING);
-            Buffer_.Clear();
-            Writer_.Reset(Buffer_);
+            Messages.report("jsn", "Previous message was constructed but not finalised", MessageHandler::WARNING);
         }
 
         IsMessageCreated_ = true;
-        IsMessageSend_ = false;
+        IsMessageFinalised_ = false;
     )
 
     Writer_.StartObject();

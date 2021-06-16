@@ -78,7 +78,7 @@ int main(int argc, char* argv[])
         moodycamel::ConcurrentQueue<NetworkMessage> OutputQueue;
         moodycamel::ConcurrentQueue<NetworkMessage> QueueSimIn;
 
-        Reg.set<JsonManager>(Reg, &InputQueue, &OutputQueue);
+        Reg.set<JsonManager>(Reg);
         Reg.set<NetworkManager>(Reg);
         Reg.set<SimulationManager>(Reg);
         auto& Network = Reg.ctx<NetworkManager>();

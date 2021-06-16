@@ -190,7 +190,8 @@ void SimulationManager::queueDynamicData(entt::entity _ClientID) const
                 .addParam("spy", _s.v(1))
                 .addParam("px", _p.v(0))
                 .addParam("py", _p.v(1))
-                .send(_ClientID);
+                .finalise();
+            OutputQueue_->enqueue({_ClientID, Json.getString()});
         });
 }
 
@@ -217,7 +218,8 @@ void SimulationManager::queueGalaxyData(entt::entity _ClientID, JsonManager::Req
                 .addParam("t", _s.Temperature)
                 .addParam("spx", _p.v(0))
                 .addParam("spy", _p.v(1))
-                .send(_ClientID);
+                .finalise();
+            OutputQueue_->enqueue({_ClientID, Json.getString()});
         });
 
     // Queue star systems
@@ -228,11 +230,13 @@ void SimulationManager::queueGalaxyData(entt::entity _ClientID, JsonManager::Req
                 .addParam("eid", entt::to_integral(_e))
                 .addParam("ts", "timestamp")
                 .addParam("name", _n.Name)
-                .send(_ClientID);
+                .finalise();
+            OutputQueue_->enqueue({_ClientID, Json.getString()});
         });
 
     Json.createResult("success")
-        .send(_ClientID, _ReqID);
+        .finalise(_ReqID);
+    OutputQueue_->enqueue({_ClientID, Json.getString()});
 }
 
 void SimulationManager::queueServerStats(entt::entity _ClientID)
@@ -246,7 +250,9 @@ void SimulationManager::queueServerStats(entt::entity _ClientID)
         .addParam("t_queue_in", QueueInTimer_.elapsed())
         .addParam("t_queue_out", QueueOutTime_)
         .addParam("stat_sim", IsSimRunning_)
-        .send(_ClientID);
+        .finalise();
+
+    OutputQueue_->enqueue({_ClientID, Json.getString()});
 }
 
 void SimulationManager::run()
@@ -282,7 +288,8 @@ void SimulationManager::run()
             {
                 auto& Json = Reg_.ctx<JsonManager>();
                 Json.createResult(true)
-                    .send(Message.ClientID, d["id"].GetUint());
+                    .finalise(d["id"].GetUint());
+                OutputQueue_->enqueue({Message.ClientID, Json.getString()});
             }
         }
         QueueInTimer_.stop();

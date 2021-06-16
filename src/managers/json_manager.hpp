@@ -3,13 +3,11 @@
 
 #include <string>
 
-#include <concurrentqueue/concurrentqueue.h>
 #include <entt/entity/registry.hpp>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
 
 #include "message_handler.hpp"
-#include "network_message.hpp"
 
 using namespace rapidjson;
 
@@ -26,12 +24,7 @@ class JsonManager
         // rapidjson's writer has to be chosen
         using RequestIDType = std::uint32_t;
 
-        explicit JsonManager(entt::registry& _Reg,
-                             moodycamel::ConcurrentQueue<NetworkMessage>* _InputQueue,
-                             moodycamel::ConcurrentQueue<NetworkMessage>* _OutputQueue) :
-                             Reg_(_Reg),
-                             InputQueue_(_InputQueue),
-                             OutputQueue_(_OutputQueue){}
+        explicit JsonManager(entt::registry& _Reg) : Reg_(_Reg) {}
 
         JsonManager& createNotification(const std::string& _Notification);
         JsonManager& createRequest(const std::string& _Req);
@@ -52,12 +45,9 @@ class JsonManager
         JsonManager& addParam(const std::string& _Name, std::uint32_t _v);
         JsonManager& addParam(const std::string& _Name, const char* _v);
         JsonManager& addParam(const std::string& _Name, const std::string& _v);
-        // JsonManager& addValue(const std::string& _v);
-        RequestIDType send(ClientIDType _ClientID, RequestIDType _ReqID = 0);
-        const char* getString()
-        {
-            return Buffer_.GetString();
-        }
+        void finalise(RequestIDType _ReqID = 0);
+        RequestIDType getRequestID() const {return RequestID_;}
+        const char* getString() const {return Buffer_.GetString();}
 
     private:
 
@@ -78,15 +68,12 @@ class JsonManager
 
         entt::registry& Reg_;
 
-        moodycamel::ConcurrentQueue<NetworkMessage>* InputQueue_;
-        moodycamel::ConcurrentQueue<NetworkMessage>* OutputQueue_;
-
         StringBuffer Buffer_;
         Writer<StringBuffer> Writer_{Buffer_};
         MessageType MessageType_{MessageType::REQUEST};
 
         DBLK(
-            bool IsMessageSend_{true};
+            bool IsMessageFinalised_{true};
             bool IsMessageCreated_{false};
         )
 
