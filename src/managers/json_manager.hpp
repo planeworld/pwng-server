@@ -37,6 +37,10 @@ class JsonManager
         // Structured results (has to be followed by "array" or "object")
         JsonManager& createResult();
 
+        JsonManager& beginArray();
+        JsonManager& beginArray(const char* _Key);
+        JsonManager& endArray();
+
         JsonManager& beginObject();
         JsonManager& endObject();
 
@@ -45,6 +49,10 @@ class JsonManager
         JsonManager& addParam(const std::string& _Name, std::uint32_t _v);
         JsonManager& addParam(const std::string& _Name, const char* _v);
         JsonManager& addParam(const std::string& _Name, const std::string& _v);
+
+        JsonManager& addValue(double _v);
+        JsonManager& addValue(std::uint32_t _v);
+
         void finalise(RequestIDType _ReqID = 0);
         RequestIDType getRequestID() const {return RequestID_;}
         const char* getString() const {return Buffer_.GetString();}

@@ -52,6 +52,43 @@ JsonManager& JsonManager::addParam(const std::string& _Name, const char* _v)
     return *this;
 }
 
+JsonManager& JsonManager::addValue(double _v)
+{
+    DBLK(this->checkCreate();)
+
+    Writer_.Double(_v);
+
+    return *this;
+}
+
+JsonManager& JsonManager::addValue(std::uint32_t _v)
+{
+    DBLK(this->checkCreate();)
+
+    Writer_.Uint(_v);
+
+    return *this;
+}
+
+JsonManager& JsonManager::beginArray()
+{
+    Writer_.StartArray();
+    return *this;
+}
+
+JsonManager& JsonManager::beginArray(const char* _Key)
+{
+    Writer_.Key(_Key);
+    Writer_.StartArray();
+    return *this;
+}
+
+JsonManager& JsonManager::endArray()
+{
+    Writer_.EndArray();
+    return *this;
+}
+
 JsonManager& JsonManager::beginObject()
 {
     Writer_.StartObject();
@@ -112,12 +149,14 @@ void JsonManager::finalise(RequestIDType _ReqID)
         IsMessageCreated_ = false;
         IsMessageFinalised_ = true;
     )
-
     if (MessageType_ == MessageType::REQUEST || MessageType_ == MessageType::NOTIFICATION)
     {
         Writer_.EndObject();
-        Writer_.Key("id");
-        Writer_.Uint(++RequestID_);
+        if (MessageType_ == MessageType::REQUEST)
+        {
+            Writer_.Key("id");
+            Writer_.Uint(++RequestID_);
+        }
     }
     else // if (MessageType_ == MessageType::RESULT || MessageType_ == MessageType::ERROR)
     {
