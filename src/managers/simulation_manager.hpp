@@ -38,10 +38,13 @@ class SimulationManager
         void queueDynamicData(entt::entity _ClientID) const;
         void queueGalaxyData(entt::entity _ClientID, JsonManager::RequestIDType _ReqID) const;
         void queueServerStats(entt::entity _ClientID);
+        void queueTireData(entt::entity _ClientID) const;
         void run();
         void shutdown();
         void start();
         void stop();
+
+        void createTire();
 
         entt::registry&  Reg_;
         GravitySystem    SysGravity_;
@@ -61,7 +64,6 @@ class SimulationManager
         std::uint32_t SimStepSize_{10};
 
         b2World*    World_{nullptr};
-        b2World*    World2_{nullptr};
         std::thread Thread_;
 
         bool IsRunning_{false};

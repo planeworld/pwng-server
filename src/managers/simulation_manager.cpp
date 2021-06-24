@@ -20,6 +20,12 @@
 SimulationManager::~SimulationManager()
 {
     if (Thread_.joinable()) Thread_.join();
+
+    if (World_ != nullptr)
+    {
+        delete World_;
+        World_ = nullptr;
+    }
 }
 
 void SimulationManager::init(moodycamel::ConcurrentQueue<NetworkMessage>* const _QueueSimIn,
@@ -32,8 +38,9 @@ void SimulationManager::init(moodycamel::ConcurrentQueue<NetworkMessage>* const 
     QueueSimIn_ = _QueueSimIn;
     OutputQueue_ = _OutputQueue;
 
-    World_ = new b2World({0.0f, 0.0f});
-    World2_ = new b2World({0.0f, 0.0f});
+    World_ = new b2World({0.0f, -9.81f});
+
+    this->createTire();
 
     auto GroupAV = Reg_.group<AccelerationComponent>(entt::get<VelocityComponent>);
     auto GroupVP = Reg_.group<VelocityComponent,PositionComponent>();
@@ -255,6 +262,37 @@ void SimulationManager::queueServerStats(entt::entity _ClientID)
     OutputQueue_->enqueue({_ClientID, Json.getString()});
 }
 
+void SimulationManager::queueTireData(entt::entity _ClientID) const
+{
+    auto& Json = Reg_.ctx<JsonManager>();
+
+    Reg_.view<TireComponent>().each
+        ([&](auto _e, const auto& _t)
+        {
+            Json.createNotification("tire_data")
+                .addParam("eid", entt::to_integral(_e))
+                .addParam("ts", "timestamp")
+                .beginArray("rim_xy")
+                .addValue(_t.Rim->GetWorldCenter().x)
+                .addValue(_t.Rim->GetWorldCenter().y)
+                .endArray()
+                .addParam("rim_r", _t.Rim->GetFixtureList()->GetShape()->m_radius)
+                .beginArray("rubber");
+
+            for (auto r : _t.Rubber)
+            {
+                Json.addValue(r->GetWorldCenter().x)
+                    .addValue(r->GetWorldCenter().y);
+            }
+
+            Json.endArray()
+                .finalise();
+
+            OutputQueue_->enqueue({_ClientID, Json.getString()});
+        });
+
+}
+
 void SimulationManager::run()
 {
     using namespace rapidjson;
@@ -297,7 +335,7 @@ void SimulationManager::run()
         PhysicsTimer_.start();
         if (IsSimRunning_)
         {
-            // World_->Step(1.0f/60.0f, 8, 3);
+            World_->Step(SimStepSize_*1.0e-3, 8, 3);
             // World2_->Step(1.0f/60.0f, 8, 3);
             // World_->ShiftOrigin({20.0f, 10.0f});
             SysGravity_.calculateForces();
@@ -317,6 +355,7 @@ void SimulationManager::run()
             [this](auto _e)
             {
                 this->queueDynamicData(_e);
+                this->queueTireData(_e);
             }
         );
 
@@ -373,4 +412,114 @@ void SimulationManager::stop()
         IsSimRunning_ = false;
         Messages.report("sim","Simulation stopped", MessageHandler::INFO);
     }
+}
+
+void SimulationManager::createTire()
+{
+    b2BodyDef myBodyDef;
+    myBodyDef.type = b2_staticBody; //change body type
+    myBodyDef.position.Set(0,-0.5); //middle, bottom
+
+    b2PolygonShape polygonShape;
+    polygonShape.SetAsBox(150,0.5); //ends of the line
+
+    b2FixtureDef myFixtureDef;
+    myFixtureDef.density = 1.0f;
+    // myFixtureDef.restitution = 1.0f;
+    myFixtureDef.shape = &polygonShape;
+    b2Body* staticBody = World_->CreateBody(&myBodyDef);
+    staticBody->CreateFixture(&myFixtureDef); //add a fixture to the body
+
+    float p_x{0.0f};
+    float p_y{0.5f};
+
+    auto e = Reg_.create();
+    auto& Tire = Reg_.emplace<TireComponent>(e);
+
+    b2BodyDef BodyDefRim;
+    BodyDefRim.type = b2_dynamicBody;
+    BodyDefRim.position.Set(p_x, p_y);
+
+    b2CircleShape ShapeCircleRim;
+    ShapeCircleRim.m_p.Set(0.0f, 0.0f);
+    ShapeCircleRim.m_radius = 0.2;
+    b2FixtureDef FixtureDefRim;
+    FixtureDefRim.density = 80.0;
+    FixtureDefRim.shape = &ShapeCircleRim;
+
+    Tire.Rim = World_->CreateBody(&BodyDefRim);
+    Tire.Rim->CreateFixture(&FixtureDefRim);
+
+    for (auto i=0u; i<TireComponent::SEGMENTS; ++i)
+    {
+        double Angle = 3.14159 * 2.0 / TireComponent::SEGMENTS * i;
+
+        // Position on rim
+        float x_r = p_x;
+        float y_r = p_y;
+        // float x_r = std::sin(Angle)*0.2 + p_x;
+        // float y_r = std::cos(Angle)*0.2 + p_y;
+        // Position on tire
+        float x_t = std::sin(Angle)*0.4 + p_x;
+        float y_t = std::cos(Angle)*0.4 + p_y;
+
+        // Define the body
+        b2BodyDef BodyDefTire;
+        BodyDefTire.bullet = false;
+        BodyDefTire.fixedRotation = true;
+        BodyDefTire.type = b2_dynamicBody;
+        BodyDefTire.position.Set(x_t, y_t);
+
+        // Define the shape and its fixture
+        b2CircleShape ShapeCircleTire;
+        ShapeCircleTire.m_p.Set(0, 0);
+        ShapeCircleTire.m_radius = 0.01;
+        b2FixtureDef FixtureDefTire;
+        FixtureDefTire.density = 1.0;
+        FixtureDefTire.shape = &ShapeCircleTire;
+
+        // Create body and attach shape
+        Tire.Rubber[i] = World_->CreateBody(&BodyDefTire);
+        Tire.Rubber[i]->CreateFixture(&FixtureDefTire);
+
+        b2MassData MassData;
+        Tire.Rubber[i]->GetMassData(&MassData);
+        MassData.mass = 10.0f / TireComponent::SEGMENTS;
+        Tire.Rubber[i]->SetMassData(&MassData);
+
+        // Define joint
+        b2DistanceJointDef JointDefRadial;
+        JointDefRadial.Initialize(Tire.Rim, Tire.Rubber[i],
+                                  {x_r, y_r}, {x_t, y_t});
+        JointDefRadial.collideConnected = false;
+        b2LinearStiffness(JointDefRadial.stiffness, JointDefRadial.damping, 0.1f, 0.1f, Tire.Rim, Tire.Rubber[i]);
+
+        Tire.RadialJoints[i] = static_cast<b2DistanceJoint*>(World_->CreateJoint(&JointDefRadial));
+
+        if (i>0u)
+        {
+            b2DistanceJointDef JointDefTangential;
+            JointDefTangential.Initialize(Tire.Rubber[i], Tire.Rubber[i-1],
+                                          {x_t, y_t}, Tire.Rubber[i-1]->GetWorldCenter());
+            JointDefTangential.collideConnected = false;
+            b2LinearStiffness(JointDefTangential.stiffness, JointDefTangential.damping, 0.1f, 0.1f, Tire.Rubber[i], Tire.Rubber[i-1]);
+
+            Tire.TangentialJoints[i] = static_cast<b2DistanceJoint*>(World_->CreateJoint(&JointDefTangential));
+        }
+    }
+    b2DistanceJointDef JointDefTangential;
+    JointDefTangential.Initialize(Tire.Rubber[TireComponent::SEGMENTS-1], Tire.Rubber[0],
+                                  Tire.Rubber[TireComponent::SEGMENTS-1]->GetWorldCenter(), Tire.Rubber[0]->GetWorldCenter());
+    JointDefTangential.collideConnected = false;
+    b2LinearStiffness(JointDefTangential.stiffness, JointDefTangential.damping, 0.1f, 0.1f, Tire.Rubber[0], Tire.Rubber[TireComponent::SEGMENTS]);
+
+    Tire.TangentialJoints[TireComponent::SEGMENTS-1] = static_cast<b2DistanceJoint*>(World_->CreateJoint(&JointDefTangential));
+
+    b2MassData MassData;
+    Tire.Rim->GetMassData(&MassData);
+    MassData.mass = 500.0f;
+    Tire.Rim->SetMassData(&MassData);
+
+    std::cout << "Mass (Rim): " << Tire.Rim->GetMass() << "kg" << std::endl;
+    std::cout << "Mass (Rubber): " << Tire.Rubber[0]->GetMass()*TireComponent::SEGMENTS << "kg" << std::endl;
 }
