@@ -7,13 +7,14 @@
 | Server | ![build](https://github.com/planeworld/pwng-server/actions/workflows/ci.yml/badge.svg) [![Codacy Badge](https://app.codacy.com/project/badge/Grade/363343886c1c4561ba600c900fa28e82)](https://www.codacy.com/gh/planeworld/pwng-server/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=planeworld/pwng-server&amp;utm_campaign=Badge_Grade) ![lastcommit](https://img.shields.io/github/last-commit/planeworld/pwng-server) |
 | [Desktop Client](https://github.com/planeworld/pwng-client) | ![build](https://github.com/planeworld/pwng-client/actions/workflows/ci.yml/badge.svg) [![Codacy Badge](https://app.codacy.com/project/badge/Grade/8d8325f947844b9f86d0947d28b6692f)](https://www.codacy.com/gh/planeworld/pwng-client/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=planeworld/pwng-client&amp;utm_campaign=Badge_Grade) ![lastcommit](https://img.shields.io/github/last-commit/planeworld/pwng-client) |
 
-### What happened and what's next
+### What happened and what's to come
 
 #### Server
 
 - [ ] Procedurally generate planets based on Poisson distribution
 - [ ] Accept subscriptions to specific star systems
 - [ ] Correctly support JSON-RCP including requests, notifications, and results/errors
+- [x] 2021-07-01: The server transmits two timestamps now: The first one is a simulation time, which just increments seconds (as a floating point number, so milliseconds are covered) and overflows when reaching a year, counting years in an unsigned integer variable. This is the virtual simulation time which is independend of any system clock and therefore load / processing power. Second is a realtime timestamp which transmits microseconds since epoch (1970-01-01, 00:00 UTC) and should be quite portable. This timestamp is mainly usable for syncing clients and interpolation/extrapolation of frames for smooth realtime visuals.
 - [x] 2021-06-24: There's a very basic integration of box2d for now. Longterm goal ist, to have local box2d world instances where objects need sophisticated physics, i.e. joint-based rigid body interactions. In this proof-of-concept, a very simple, local tire model has been implemented, which consists of the rim (mass) and the tire (several radially distributed point masses) that are connected via springs/dampers (distance joint). For now, it's simply at the coordinate systems origin, later, it will be bound to a parent (e.g. moon, local region of a moon)
 
 #### Desktop Client
