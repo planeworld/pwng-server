@@ -21,6 +21,7 @@ set(HEADERS
   math_types.hpp
   message_handler.hpp
   network_message.hpp
+  sim_timer.hpp
   star_definitions.hpp
   timer.hpp
 )
@@ -30,6 +31,7 @@ set(SOURCES
   managers/network_manager.cpp
   managers/simulation_manager.cpp
   pwng_server.cpp
+  sim_timer.cpp
 )
 
 add_executable(pwng-server ${HEADERS} ${SOURCES})

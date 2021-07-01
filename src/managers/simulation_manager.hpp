@@ -14,6 +14,7 @@
 #include "integrator_system.hpp"
 #include "name_system.hpp"
 #include "network_message.hpp"
+#include "sim_timer.hpp"
 #include "timer.hpp"
 
 class SimulationManager
@@ -35,6 +36,8 @@ class SimulationManager
 
     private:
 
+        std::uint64_t getTimeStamp() const;
+
         void queueDynamicData(entt::entity _ClientID) const;
         void queueGalaxyData(entt::entity _ClientID, JsonManager::RequestIDType _ReqID) const;
         void queueServerStats(entt::entity _ClientID);
@@ -54,6 +57,7 @@ class SimulationManager
         moodycamel::ConcurrentQueue<NetworkMessage>* QueueSimIn_{nullptr};
         moodycamel::ConcurrentQueue<NetworkMessage>* OutputQueue_{nullptr};
 
+        SimTimer SimTime_;
         Timer QueueInTimer_;
         Timer QueueOutTimer_;
         Timer PhysicsTimer_;

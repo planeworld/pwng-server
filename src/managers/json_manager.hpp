@@ -47,6 +47,7 @@ class JsonManager
         JsonManager& addParam(const std::string& _Name, bool _v);
         JsonManager& addParam(const std::string& _Name, double _v);
         JsonManager& addParam(const std::string& _Name, std::uint32_t _v);
+        JsonManager& addParam(const std::string& _Name, std::uint64_t _v);
         JsonManager& addParam(const std::string& _Name, const char* _v);
         JsonManager& addParam(const std::string& _Name, const std::string& _v);
 

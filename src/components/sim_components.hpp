@@ -11,7 +11,7 @@
 
 struct TireComponent
 {
-    constexpr static int SEGMENTS = 64;
+    constexpr static int SEGMENTS = 32;
 
     std::array<b2Body*, SEGMENTS> Rubber;
     b2Body* Rim;

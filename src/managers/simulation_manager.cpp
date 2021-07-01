@@ -173,6 +173,11 @@ void SimulationManager::init(moodycamel::ConcurrentQueue<NetworkMessage>* const 
 
 }
 
+std::uint64_t SimulationManager::getTimeStamp() const
+{
+    return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+}
+
 void SimulationManager::queueDynamicData(entt::entity _ClientID) const
 {
     auto& Json = Reg_.ctx<JsonManager>();
@@ -185,10 +190,10 @@ void SimulationManager::queueDynamicData(entt::entity _ClientID) const
         ([&](auto _e, const auto& _b, const auto& _n, const auto& _p,
                       const auto& _r, const auto& _s)
         {
-
             Json.createNotification("bc_dynamic_data")
                 .addParam("eid", entt::to_integral(_e))
-                .addParam("ts", "timestamp")
+                .addParam("ts", SimTime_.toStamp())
+                .addParam("ts_r", this->getTimeStamp())
                 .addParam("name", _n.Name)
                 .addParam("m", _b.m)
                 .addParam("i", _b.i)
@@ -216,7 +221,8 @@ void SimulationManager::queueGalaxyData(entt::entity _ClientID, JsonManager::Req
         {
             Json.createNotification("galaxy_data_stars")
                 .addParam("eid", entt::to_integral(_e))
-                .addParam("ts", "timestamp")
+                .addParam("ts", SimTime_.toStamp())
+                .addParam("ts_r", this->getTimeStamp())
                 .addParam("name", _n.Name)
                 .addParam("m", _b.m)
                 .addParam("i", _b.i)
@@ -235,7 +241,8 @@ void SimulationManager::queueGalaxyData(entt::entity _ClientID, JsonManager::Req
         {
             Json.createNotification("galaxy_data_systems")
                 .addParam("eid", entt::to_integral(_e))
-                .addParam("ts", "timestamp")
+                .addParam("ts", SimTime_.toStamp())
+                .addParam("ts_r", this->getTimeStamp())
                 .addParam("name", _n.Name)
                 .finalise();
             OutputQueue_->enqueue({_ClientID, Json.getString()});
@@ -251,7 +258,6 @@ void SimulationManager::queueServerStats(entt::entity _ClientID)
     auto& Json = Reg_.ctx<JsonManager>();
 
     Json.createNotification("sim_stats")
-        .addParam("ts", "timestamp")
         .addParam("t_sim", SimulationTime_)
         .addParam("t_phy", PhysicsTimer_.elapsed())
         .addParam("t_queue_in", QueueInTimer_.elapsed())
@@ -271,7 +277,8 @@ void SimulationManager::queueTireData(entt::entity _ClientID) const
         {
             Json.createNotification("tire_data")
                 .addParam("eid", entt::to_integral(_e))
-                .addParam("ts", "timestamp")
+                .addParam("ts", SimTime_.toStamp())
+                .addParam("ts_r", this->getTimeStamp())
                 .beginArray("rim_xy")
                 .addValue(_t.Rim->GetWorldCenter().x)
                 .addValue(_t.Rim->GetWorldCenter().y)
@@ -336,10 +343,9 @@ void SimulationManager::run()
         if (IsSimRunning_)
         {
             World_->Step(SimStepSize_*1.0e-3, 8, 3);
-            // World2_->Step(1.0f/60.0f, 8, 3);
-            // World_->ShiftOrigin({20.0f, 10.0f});
             SysGravity_.calculateForces();
             SysIntegrator_.integrate(3600.0);
+            SimTime_.inc(SimStepSize_*1.0e-3);
         }
         PhysicsTimer_.stop();
 
@@ -399,6 +405,7 @@ void SimulationManager::start()
         auto& Messages = Reg_.ctx<MessageHandler>();
 
         IsSimRunning_ = true;
+        SimTime_.start();
         Messages.report("sim","Simulation started", MessageHandler::INFO);
     }
 }
@@ -410,6 +417,7 @@ void SimulationManager::stop()
         auto& Messages = Reg_.ctx<MessageHandler>();
 
         IsSimRunning_ = false;
+        SimTime_.stop();
         Messages.report("sim","Simulation stopped", MessageHandler::INFO);
     }
 }
@@ -491,33 +499,38 @@ void SimulationManager::createTire()
         b2DistanceJointDef JointDefRadial;
         JointDefRadial.Initialize(Tire.Rim, Tire.Rubber[i],
                                   {x_r, y_r}, {x_t, y_t});
-        JointDefRadial.collideConnected = false;
+        JointDefRadial.collideConnected = true;
         b2LinearStiffness(JointDefRadial.stiffness, JointDefRadial.damping, 0.1f, 0.1f, Tire.Rim, Tire.Rubber[i]);
 
         Tire.RadialJoints[i] = static_cast<b2DistanceJoint*>(World_->CreateJoint(&JointDefRadial));
+        Tire.RadialJoints[i]->SetMinLength(0.35f);
+        // Tire.RadialJoints[i]->SetMaxLength(0.45f);
+        // Tire.RadialJoints[i]->SetLength(0.4f);
 
         if (i>0u)
         {
             b2DistanceJointDef JointDefTangential;
             JointDefTangential.Initialize(Tire.Rubber[i], Tire.Rubber[i-1],
                                           {x_t, y_t}, Tire.Rubber[i-1]->GetWorldCenter());
-            JointDefTangential.collideConnected = false;
+            JointDefTangential.collideConnected = true;
             b2LinearStiffness(JointDefTangential.stiffness, JointDefTangential.damping, 0.1f, 0.1f, Tire.Rubber[i], Tire.Rubber[i-1]);
 
             Tire.TangentialJoints[i] = static_cast<b2DistanceJoint*>(World_->CreateJoint(&JointDefTangential));
+            // Tire.TangentialJoints[i]->SetMinLength(0.01f);
         }
     }
     b2DistanceJointDef JointDefTangential;
     JointDefTangential.Initialize(Tire.Rubber[TireComponent::SEGMENTS-1], Tire.Rubber[0],
                                   Tire.Rubber[TireComponent::SEGMENTS-1]->GetWorldCenter(), Tire.Rubber[0]->GetWorldCenter());
-    JointDefTangential.collideConnected = false;
+    JointDefTangential.collideConnected = true;
     b2LinearStiffness(JointDefTangential.stiffness, JointDefTangential.damping, 0.1f, 0.1f, Tire.Rubber[0], Tire.Rubber[TireComponent::SEGMENTS]);
 
     Tire.TangentialJoints[TireComponent::SEGMENTS-1] = static_cast<b2DistanceJoint*>(World_->CreateJoint(&JointDefTangential));
+    // Tire.TangentialJoints[TireComponent::SEGMENTS-1]->SetMinLength(0.01f);
 
     b2MassData MassData;
     Tire.Rim->GetMassData(&MassData);
-    MassData.mass = 500.0f;
+    MassData.mass = 10.0f;
     Tire.Rim->SetMassData(&MassData);
 
     std::cout << "Mass (Rim): " << Tire.Rim->GetMass() << "kg" << std::endl;

@@ -32,6 +32,16 @@ JsonManager& JsonManager::addParam(const std::string& _Name, std::uint32_t _v)
     return *this;
 }
 
+JsonManager& JsonManager::addParam(const std::string& _Name, std::uint64_t _v)
+{
+    DBLK(this->checkCreate();)
+
+    Writer_.Key(_Name.c_str());
+    Writer_.Uint64(_v);
+
+    return *this;
+}
+
 JsonManager& JsonManager::addParam(const std::string& _Name, const std::string& _v)
 {
     DBLK(this->checkCreate();)
