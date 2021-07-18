@@ -258,6 +258,8 @@ void SimulationManager::queueServerStats(entt::entity _ClientID)
     auto& Json = Reg_.ctx<JsonManager>();
 
     Json.createNotification("sim_stats")
+        .addParam("ts", SimTime_.toStamp())
+        .addParam("ts_r", this->getTimeStamp())
         .addParam("t_sim", SimulationTime_)
         .addParam("t_phy", PhysicsTimer_.elapsed())
         .addParam("t_queue_in", QueueInTimer_.elapsed())
