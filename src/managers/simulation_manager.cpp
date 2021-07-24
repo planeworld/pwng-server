@@ -309,6 +309,9 @@ void SimulationManager::run()
     auto& Messages = Reg_.ctx<MessageHandler>();
     Messages.report("sim", "Simulation Manager running", MessageHandler::INFO);
 
+    Timer TimerServerStatusSubscription;
+    TimerServerStatusSubscription.start();
+
     IsRunning_ = true;
     while (IsRunning_)
     {
@@ -347,18 +350,22 @@ void SimulationManager::run()
             World_->Step(SimStepSize_*1.0e-3, 8, 3);
             SysGravity_.calculateForces();
             SysIntegrator_.integrate(3600.0);
-            SimTime_.inc(SimStepSize_*1.0e-3);
+            SimTime_.inc(SimStepSize_*1.0e-3*3600.0);
         }
         PhysicsTimer_.stop();
 
         QueueOutTimer_.start();
 
-        Reg_.view<ServerStatusSubscriptionComponent>().each(
-            [this](auto _e)
-            {
-                this->queueServerStats(_e);
-            }
-        );
+        if (TimerServerStatusSubscription.time() >= 0.1)
+        {
+            Reg_.view<ServerStatusSubscriptionComponent>().each(
+                [this](auto _e)
+                {
+                    this->queueServerStats(_e);
+                });
+            TimerServerStatusSubscription.restart();
+
+        }
         Reg_.view<DynamicDataSubscriptionComponent>().each(
             [this](auto _e)
             {
@@ -419,7 +426,6 @@ void SimulationManager::stop()
         auto& Messages = Reg_.ctx<MessageHandler>();
 
         IsSimRunning_ = false;
-        SimTime_.stop();
         Messages.report("sim","Simulation stopped", MessageHandler::INFO);
     }
 }
