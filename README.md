@@ -61,6 +61,12 @@ At the server side, EnTT is used for two main purposes at the moment:
 1. Each object, e.g. a star, is an entity with several components. This might be metadata such as temperature and stellar class or kinematics/kinetics information like position, velocity, acceleration. Objects with the latter data pass the integrator system, which integrates all accelerations and subsequently velocities to their final position.
 2. Each connection to a client is an entity, too. This allows for component-based subscriptions. For each type of subscription there will be an accordant component. If a client requests a certain subscription, the representing entity will simply get the relevant subscription component attached. This way, all subscriptions can be handled by iterating over the component views.
 
+### Magnum
+
+The client heavily relies on the excellent [Magnum](https://github.com/mosra/magnum) middleware.
+1. At the moment, stars are just drawn as circles with the stock shader. The number of segments is based on the circles size, which basically is a very naive 3-stage LOD. In the future, a custom shader will draw dots if size is small in a single draw call. For circles, instancing can be implemented. Furthermore, since the stars of the galaxy are static for now, galaxies can be prerenderd to a texture in order to only draw a textured quad for lower LODs.
+2. The main scene (without UI) is rendered to a texture. This allows for arbitrary resolutions. If the resolution is lower than the native window resolution, the texture is just rendered to screen. For higher resolutions, i.e. SSAA (super sampling aliasing), rendering consists of two stages: First, the scene is rendered to a high resolution texture. Second, a custom Gaussian blur shader is used for lowpass filtering with several passes, depending on super sampling factor. Hence, the final rendering to screen (which effectively is a downsampling of the image) follows the Nyquist-Shannon theorem to avoid aliasing and thus, to produce the desired anti-aliased result. 
+
 ## Client-Server Communication Protocol
 
 The communication protocol will be specified in the wiki: [Application Protocol Draft](https://github.com/planeworld/pwng-server/wiki)
