@@ -253,17 +253,106 @@ void SimulationManager::queueGalaxyData(entt::entity _ClientID, JsonManager::Req
     OutputQueue_->enqueue({_ClientID, Json.getString()});
 }
 
-void SimulationManager::queueServerStats(entt::entity _ClientID)
+void SimulationManager::processSubscriptions(Timer& _t) const
+{
+    static Timer Counter01;
+    static Timer Counter05;
+    static Timer Counter1;
+    static Timer Counter5;
+    static Timer Counter10;
+    if (Counter01.split() >= 0.1)
+    {
+        Reg_.view<PerformanceStatsSubscriptionTag01>().each(
+            [this](auto _e)
+            {
+                this->queuePerformanceStats(_e);
+            });
+        Reg_.view<SimStatsSubscriptionTag01>().each(
+            [this](auto _e)
+            {
+                this->queueSimStats(_e);
+            });
+        Counter01.restart();
+    }
+    if (Counter05.split() >= 0.5)
+    {
+        Reg_.view<PerformanceStatsSubscriptionTag05>().each(
+            [this](auto _e)
+            {
+                this->queuePerformanceStats(_e);
+            });
+        Reg_.view<SimStatsSubscriptionTag05>().each(
+            [this](auto _e)
+            {
+                this->queueSimStats(_e);
+            });
+        Counter05.restart();
+    }
+    if (Counter1.split() >= 1.0)
+    {
+        Reg_.view<PerformanceStatsSubscriptionTag1>().each(
+            [this](auto _e)
+            {
+                this->queuePerformanceStats(_e);
+            });
+        Reg_.view<SimStatsSubscriptionTag1>().each(
+            [this](auto _e)
+            {
+                this->queueSimStats(_e);
+            });
+        Counter1.restart();
+    }
+    if (Counter5.split() >= 5.0)
+    {
+        Reg_.view<PerformanceStatsSubscriptionTag5>().each(
+            [this](auto _e)
+            {
+                this->queuePerformanceStats(_e);
+            });
+        Reg_.view<SimStatsSubscriptionTag5>().each(
+            [this](auto _e)
+            {
+                this->queueSimStats(_e);
+            });
+        Counter5.restart();
+    }
+    if (Counter10.split() >= 10.0)
+    {
+        Reg_.view<PerformanceStatsSubscriptionTag10>().each(
+            [this](auto _e)
+            {
+                this->queuePerformanceStats(_e);
+            });
+        Reg_.view<SimStatsSubscriptionTag10>().each(
+            [this](auto _e)
+            {
+                this->queueSimStats(_e);
+            });
+        Counter10.restart();
+    }
+}
+
+void SimulationManager::queuePerformanceStats(entt::entity _ClientID) const
+{
+    auto& Json = Reg_.ctx<JsonManager>();
+
+    Json.createNotification("perf_stats")
+        .addParam("t_sim", SimulationTime_)
+        .addParam("t_phy", PhysicsTimer_.elapsed())
+        .addParam("t_queue_in", QueueInTimer_.elapsed())
+        .addParam("t_queue_out", QueueOutTime_)
+        .finalise();
+
+    OutputQueue_->enqueue({_ClientID, Json.getString()});
+}
+
+void SimulationManager::queueSimStats(entt::entity _ClientID) const
 {
     auto& Json = Reg_.ctx<JsonManager>();
 
     Json.createNotification("sim_stats")
         .addParam("ts", SimTime_.toStamp())
-        .addParam("ts_r", this->getTimeStamp())
-        .addParam("t_sim", SimulationTime_)
-        .addParam("t_phy", PhysicsTimer_.elapsed())
-        .addParam("t_queue_in", QueueInTimer_.elapsed())
-        .addParam("t_queue_out", QueueOutTime_)
+        .addParam("ts_f", 3600.0*SimStepSize_)
         .addParam("stat_sim", IsSimRunning_)
         .finalise();
 
@@ -309,8 +398,8 @@ void SimulationManager::run()
     auto& Messages = Reg_.ctx<MessageHandler>();
     Messages.report("sim", "Simulation Manager running", MessageHandler::INFO);
 
-    Timer TimerServerStatusSubscription;
-    TimerServerStatusSubscription.start();
+    Timer TimerSubscriptions;
+    TimerSubscriptions.start();
 
     IsRunning_ = true;
     while (IsRunning_)
@@ -350,22 +439,24 @@ void SimulationManager::run()
             World_->Step(SimStepSize_*1.0e-3, 8, 3);
             SysGravity_.calculateForces();
             SysIntegrator_.integrate(3600.0);
-            SimTime_.inc(SimStepSize_*1.0e-3*3600.0);
+            SimTime_.inc(3600.0);
         }
         PhysicsTimer_.stop();
 
         QueueOutTimer_.start();
 
-        if (TimerServerStatusSubscription.time() >= 0.1)
-        {
-            Reg_.view<ServerStatusSubscriptionComponent>().each(
-                [this](auto _e)
-                {
-                    this->queueServerStats(_e);
-                });
-            TimerServerStatusSubscription.restart();
+        this->processSubscriptions(TimerSubscriptions);
 
-        }
+        // if (TimerServerStatusSubscription.time() >= 0.1)
+        // {
+            // Reg_.view<ServerStatusSubscriptionComponent>().each(
+                // [this](auto _e)
+                // {
+                    // this->queueServerStats(_e);
+                // });
+            // TimerServerStatusSubscription.restart();
+
+        // }
         Reg_.view<DynamicDataSubscriptionComponent>().each(
             [this](auto _e)
             {

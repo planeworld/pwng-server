@@ -104,15 +104,32 @@ int main(int argc, char* argv[])
                     auto& Command = d["method"];
 
                     // Server addressed commands
-                    if (Command == "sub_server_stats")
+                    if (Command == "sub_all")
                     {
-                        Messages.report("prg", "Subscribe on server stats requested", MessageHandler::INFO);
-                        Reg.emplace_or_replace<ServerStatusSubscriptionComponent>(Message.ClientID);
+                        Messages.report("prg", "Subscribe to all requested", MessageHandler::INFO);
+                        Reg.emplace_or_replace<PerformanceStatsSubscriptionTag01>(Message.ClientID);
+                        Reg.emplace_or_replace<SimStatsSubscriptionTag01>(Message.ClientID);
+                        QueueSimIn.enqueue(Message);
                     }
-                    else if (Command == "unsub_server_stats")
+                    else if (Command == "sub_perf_stats")
                     {
-                        Messages.report("prg", "Unsubscribe on server stats requested", MessageHandler::INFO);
-                        Reg.remove_if_exists<ServerStatusSubscriptionComponent>(Message.ClientID);
+                        Messages.report("prg", "Subscribe on performance stats requested", MessageHandler::INFO);
+                        Reg.emplace_or_replace<PerformanceStatsSubscriptionTag01>(Message.ClientID);
+                    }
+                    else if (Command == "unsub_perf_stats")
+                    {
+                        Messages.report("prg", "Unsubscribe on performance stats requested", MessageHandler::INFO);
+                        Reg.remove_if_exists<PerformanceStatsSubscriptionTag01>(Message.ClientID);
+                    }
+                    else if (Command == "sub_sim_stats")
+                    {
+                        Messages.report("prg", "Subscribe on simulation stats requested", MessageHandler::INFO);
+                        Reg.emplace_or_replace<SimStatsSubscriptionTag01>(Message.ClientID);
+                    }
+                    else if (Command == "unsub_sim_stats")
+                    {
+                        Messages.report("prg", "Unsubscribe on simulation stats requested", MessageHandler::INFO);
+                        Reg.remove_if_exists<SimStatsSubscriptionTag01>(Message.ClientID);
                     }
                     // Simulation addressed commands
                     else if (Command == "get_data")

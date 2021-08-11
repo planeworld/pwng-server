@@ -13,18 +13,18 @@ class Timer
         void    start()        {Start = HiResClock::now();}
         void    stop()         {Stop = HiResClock::now();}
         void    restart()      {stop(); start();}
-        double  elapsed()      {return duration<double>(Stop-Start).count();}
-        double  elapsed_s()    {return duration<double>(Stop-Start).count();}
-        double  elapsed_ms()   {return duration<double>(Stop-Start).count()*1000.0;}
-        double  elapsed_us()   {return duration<double>(Stop-Start).count()*1.0e6;}
-        double  split()        {return duration<double>(HiResClock::now() - Start).count();}
-        double  split_s()      {return duration<double>(HiResClock::now() - Start).count();}
-        double  split_ms()     {return duration<double>(HiResClock::now() - Start).count()*1000.0;}
-        double  split_us()     {return duration<double>(HiResClock::now() - Start).count()*1.0e6;}
-        double  time()         {return duration<double>(HiResClock::now() - Start).count();}
-        double  time_s()       {return duration<double>(HiResClock::now() - Start).count();}
-        double  time_ms()      {return duration<double>(HiResClock::now() - Start).count()*1000.0;}
-        double  time_us()      {return duration<double>(HiResClock::now() - Start).count()*1.0e6;}
+        double  elapsed() const     {return duration<double>(Stop-Start).count();}
+        double  elapsed_s() const   {return duration<double>(Stop-Start).count();}
+        double  elapsed_ms() const  {return duration<double>(Stop-Start).count()*1000.0;}
+        double  elapsed_us() const  {return duration<double>(Stop-Start).count()*1.0e6;}
+        double  split() const       {return duration<double>(HiResClock::now() - Start).count();}
+        double  split_s() const     {return duration<double>(HiResClock::now() - Start).count();}
+        double  split_ms() const    {return duration<double>(HiResClock::now() - Start).count()*1000.0;}
+        double  split_us() const    {return duration<double>(HiResClock::now() - Start).count()*1.0e6;}
+        double  time() const        {return duration<double>(HiResClock::now() - Start).count();}
+        double  time_s() const      {return duration<double>(HiResClock::now() - Start).count();}
+        double  time_ms() const     {return duration<double>(HiResClock::now() - Start).count()*1000.0;}
+        double  time_us() const     {return duration<double>(HiResClock::now() - Start).count()*1.0e6;}
 
     private:
         

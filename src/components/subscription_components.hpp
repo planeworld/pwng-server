@@ -14,12 +14,25 @@ struct StarSystemsSubscriptionComponent
 
 // Tags, i.e. components without members
 
-struct ServerStatusSubscriptionComponent
-{
-};
+struct ServerStatusSubscriptionComponent{};
 
-struct DynamicDataSubscriptionComponent
-{
-};
+// Subscription to performance from
+// 0.1s to 10s update frequency
+struct PerformanceStatsSubscriptionTag01{};
+struct PerformanceStatsSubscriptionTag05{};
+struct PerformanceStatsSubscriptionTag1{};
+struct PerformanceStatsSubscriptionTag5{};
+struct PerformanceStatsSubscriptionTag10{};
+
+// Subscription to simulation status from
+// 0.1s to 10s update frequency
+struct SimStatsSubscriptionTag01{};
+struct SimStatsSubscriptionTag05{};
+struct SimStatsSubscriptionTag1{};
+struct SimStatsSubscriptionTag5{};
+struct SimStatsSubscriptionTag10{};
+
+
+struct DynamicDataSubscriptionComponent{};
 
 #endif // SUBSCRIPTION_COMPONENTS_HPP

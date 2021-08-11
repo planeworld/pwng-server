@@ -38,9 +38,12 @@ class SimulationManager
 
         std::uint64_t getTimeStamp() const;
 
+        void processSubscriptions(Timer& _t) const;
         void queueDynamicData(entt::entity _ClientID) const;
         void queueGalaxyData(entt::entity _ClientID, JsonManager::RequestIDType _ReqID) const;
-        void queueServerStats(entt::entity _ClientID);
+        void queuePerformanceStats(entt::entity _ClientID) const;
+        void queueSimStats(entt::entity _ClientID) const;
+        // void queueServerStats(entt::entity _ClientID);
         void queueTireData(entt::entity _ClientID) const;
         void run();
         void shutdown();
