@@ -9,6 +9,7 @@
 #include "acceleration_component.hpp"
 #include "body_component.hpp"
 #include "name_component.hpp"
+#include "network_message_broker.hpp"
 #include "position_component.hpp"
 #include "radius_component.hpp"
 #include "star_definitions.hpp"
@@ -28,7 +29,7 @@ SimulationManager::~SimulationManager()
     }
 }
 
-void SimulationManager::init(moodycamel::ConcurrentQueue<NetworkMessage>* const _QueueSimIn,
+void SimulationManager::init(moodycamel::ConcurrentQueue<NetworkDocument>* const _QueueSimIn,
                              moodycamel::ConcurrentQueue<NetworkMessage>* const _OutputQueue)
 {
     auto& Messages = Reg_.ctx<MessageHandler>();
@@ -173,6 +174,41 @@ void SimulationManager::init(moodycamel::ConcurrentQueue<NetworkMessage>* const 
 
 }
 
+void SimulationManager::start()
+{
+    if (!IsSimRunning_)
+    {
+        auto& Messages = Reg_.ctx<MessageHandler>();
+
+        IsSimRunning_ = true;
+        SimTime_.start();
+        Messages.report("sim","Simulation started", MessageHandler::INFO);
+    }
+}
+
+void SimulationManager::stop()
+{
+    if (IsSimRunning_)
+    {
+        auto& Messages = Reg_.ctx<MessageHandler>();
+
+        IsSimRunning_ = false;
+        Messages.report("sim","Simulation stopped", MessageHandler::INFO);
+    }
+}
+
+void SimulationManager::shutdown()
+{
+    if (IsRunning_)
+    {
+        auto& Messages = Reg_.ctx<MessageHandler>();
+
+        IsSimRunning_ = false;
+        IsRunning_ = false;
+        Messages.report("sim","Simulation shutdown", MessageHandler::INFO);
+    }
+}
+
 std::uint64_t SimulationManager::getTimeStamp() const
 {
     return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
@@ -253,7 +289,7 @@ void SimulationManager::queueGalaxyData(entt::entity _ClientID, JsonManager::Req
     OutputQueue_->enqueue({_ClientID, Json.getString()});
 }
 
-void SimulationManager::processSubscriptions(Timer& _t) const
+void SimulationManager::processSubscriptions(Timer& _t)
 {
     static Timer Counter01;
     static Timer Counter05;
@@ -330,6 +366,15 @@ void SimulationManager::processSubscriptions(Timer& _t) const
             });
         Counter10.restart();
     }
+    if (IsGalaxyEvent_)
+    {
+        Reg_.view<GalaxyDataSubscriptionTag>().each(
+            [this](auto _e)
+            {
+                this->queueGalaxyData(_e, 7);
+                IsGalaxyEvent_ = false;
+            });
+    }
 }
 
 void SimulationManager::queuePerformanceStats(entt::entity _ClientID) const
@@ -396,6 +441,8 @@ void SimulationManager::run()
     using namespace rapidjson;
 
     auto& Messages = Reg_.ctx<MessageHandler>();
+    auto& Broker = Reg_.ctx<NetworkMessageBroker>();
+
     Messages.report("sim", "Simulation Manager running", MessageHandler::INFO);
 
     Timer TimerSubscriptions;
@@ -406,30 +453,23 @@ void SimulationManager::run()
     {
         SimulationTimer_.start();
 
-        NetworkMessage Message;
+        NetworkDocument d;
 
         QueueInTimer_.start();
-        while (QueueSimIn_->try_dequeue(Message))
+        while (QueueSimIn_->try_dequeue(d))
         {
-            Document d;
-            d.Parse(Message.Payload.c_str());
-            auto& Command = d["method"];
+            Broker.executeSim(d);
 
-            if (Command == "get_data") this->queueGalaxyData(Message.ClientID, d["id"].GetUint());
-            else if (Command == "shutdown")  this->shutdown();
-            else if (Command == "start_simulation") this->start();
-            else if (Command == "stop_simulation")  this->stop();
-            else if (Command == "sub_dynamic_data")
-            {
-                Reg_.emplace_or_replace<DynamicDataSubscriptionComponent>(Message.ClientID);
-            }
-            else if (Command == "sub_system")
-            {
-                auto& Json = Reg_.ctx<JsonManager>();
-                Json.createResult(true)
-                    .finalise(d["id"].GetUint());
-                OutputQueue_->enqueue({Message.ClientID, Json.getString()});
-            }
+            // auto& Command = (*d.Payload)["method"];
+
+            // if (Command == "get_data") this->queueGalaxyData(d.ClientID, (*d.Payload)["id"].GetUint());
+            // else if (Command == "sub_system")
+            // {
+            //     auto& Json = Reg_.ctx<JsonManager>();
+            //     Json.createResult(true)
+            //         .finalise((*d.Payload)["id"].GetUint());
+            //     OutputQueue_->enqueue({d.ClientID, Json.getString()});
+            // }
         }
         QueueInTimer_.stop();
 
@@ -484,41 +524,6 @@ void SimulationManager::run()
     }
 
     Messages.report("sim", "Simulation thread stopped successfully", MessageHandler::INFO);
-}
-
-void SimulationManager::shutdown()
-{
-    if (IsRunning_)
-    {
-        auto& Messages = Reg_.ctx<MessageHandler>();
-
-        IsSimRunning_ = false;
-        IsRunning_ = false;
-        Messages.report("sim","Simulation shutdown", MessageHandler::INFO);
-    }
-}
-
-void SimulationManager::start()
-{
-    if (!IsSimRunning_)
-    {
-        auto& Messages = Reg_.ctx<MessageHandler>();
-
-        IsSimRunning_ = true;
-        SimTime_.start();
-        Messages.report("sim","Simulation started", MessageHandler::INFO);
-    }
-}
-
-void SimulationManager::stop()
-{
-    if (IsSimRunning_)
-    {
-        auto& Messages = Reg_.ctx<MessageHandler>();
-
-        IsSimRunning_ = false;
-        Messages.report("sim","Simulation stopped", MessageHandler::INFO);
-    }
 }
 
 void SimulationManager::createTire()

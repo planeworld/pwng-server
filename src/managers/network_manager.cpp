@@ -1,9 +1,11 @@
 #include "network_manager.hpp"
 
 #include "message_handler.hpp"
+#include "network_message_broker.hpp"
 #include "timer.hpp"
 
-bool NetworkManager::init(moodycamel::ConcurrentQueue<NetworkMessage>* const _InputQueue,
+bool NetworkManager::init(moodycamel::ConcurrentQueue<NetworkDocument>* const _QueueNetIn,
+                          moodycamel::ConcurrentQueue<NetworkMessage>* const _InputQueue,
                           moodycamel::ConcurrentQueue<NetworkMessage>* const _OutputQueue,
                           int _Port)
 {
@@ -11,6 +13,7 @@ bool NetworkManager::init(moodycamel::ConcurrentQueue<NetworkMessage>* const _In
 
     Messages.report("net", "Initialising Network Manager", MessageHandler::INFO);
 
+    QueueNetIn_ = _QueueNetIn;
     InputQueue_ = _InputQueue;
     OutputQueue_ = _OutputQueue;
 
@@ -111,6 +114,7 @@ bool NetworkManager::onValidate(websocketpp::connection_hdl _Connection)
 void NetworkManager::run()
 {
     auto& Messages = Reg_.ctx<MessageHandler>();
+    auto& Broker = Reg_.ctx<NetworkMessageBroker>();
     Timer NetworkTimer;
 
     Messages.report("net", "Network Manager running", MessageHandler::INFO);
@@ -157,6 +161,14 @@ void NetworkManager::run()
             }
 
         }
+
+        NetworkDocument d;
+
+        while (QueueNetIn_->try_dequeue(d))
+        {
+            Broker.executeNet(d);
+        }
+
         NetworkTimer.stop();
         if (NetworkingStepSize_ - NetworkTimer.elapsed_ms() > 0.0)
         {

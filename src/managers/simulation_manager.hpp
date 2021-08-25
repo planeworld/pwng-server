@@ -30,15 +30,18 @@ class SimulationManager
 
         bool isRunning() const {return IsRunning_;}
 
-        void init(moodycamel::ConcurrentQueue<NetworkMessage>* const _QueueSimIn,
+        void init(moodycamel::ConcurrentQueue<NetworkDocument>* const _QueueSimIn,
                   moodycamel::ConcurrentQueue<NetworkMessage>* const _OutputQueue);
+        void start();
+        void stop();
+        void shutdown();
 
 
     private:
 
         std::uint64_t getTimeStamp() const;
 
-        void processSubscriptions(Timer& _t) const;
+        void processSubscriptions(Timer& _t);
         void queueDynamicData(entt::entity _ClientID) const;
         void queueGalaxyData(entt::entity _ClientID, JsonManager::RequestIDType _ReqID) const;
         void queuePerformanceStats(entt::entity _ClientID) const;
@@ -46,9 +49,6 @@ class SimulationManager
         // void queueServerStats(entt::entity _ClientID);
         void queueTireData(entt::entity _ClientID) const;
         void run();
-        void shutdown();
-        void start();
-        void stop();
 
         void createTire();
 
@@ -57,7 +57,7 @@ class SimulationManager
         IntegratorSystem SysIntegrator_;
         NameSystem       SysName_;
 
-        moodycamel::ConcurrentQueue<NetworkMessage>* QueueSimIn_{nullptr};
+        moodycamel::ConcurrentQueue<NetworkDocument>* QueueSimIn_{nullptr};
         moodycamel::ConcurrentQueue<NetworkMessage>* OutputQueue_{nullptr};
 
         SimTimer SimTime_;
@@ -75,6 +75,7 @@ class SimulationManager
 
         bool IsRunning_{false};
         bool IsSimRunning_{false};
+        bool IsGalaxyEvent_{true};
 };
 
 #endif // SIMULATION_MANAGER_HPP

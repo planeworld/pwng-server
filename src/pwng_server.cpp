@@ -9,6 +9,7 @@
 #include "json_manager.hpp"
 #include "message_handler.hpp"
 #include "network_manager.hpp"
+#include "network_message_broker.hpp"
 #include "position_component.hpp"
 #include "simulation_manager.hpp"
 #include "subscription_components.hpp"
@@ -68,6 +69,7 @@ int main(int argc, char* argv[])
     Messages.registerSource("prg", "prg");
     Messages.registerSource("sim", "sim");
     Messages.registerSource("jsn", "jsn");
+    Messages.registerSource("brk", "brk");
     Messages.setColored(true);
     Messages.setLevel(MessageHandler::DEBUG_L3);
 
@@ -76,15 +78,18 @@ int main(int argc, char* argv[])
     {
         moodycamel::ConcurrentQueue<NetworkMessage> InputQueue;
         moodycamel::ConcurrentQueue<NetworkMessage> OutputQueue;
-        moodycamel::ConcurrentQueue<NetworkMessage> QueueSimIn;
+        moodycamel::ConcurrentQueue<NetworkDocument> QueueSimIn;
+        moodycamel::ConcurrentQueue<NetworkDocument> QueueNetIn;
 
         Reg.set<JsonManager>(Reg);
         Reg.set<NetworkManager>(Reg);
+        Reg.set<NetworkMessageBroker>(Reg, &QueueSimIn, &QueueNetIn);
         Reg.set<SimulationManager>(Reg);
+        auto& Broker = Reg.ctx<NetworkMessageBroker>();
         auto& Network = Reg.ctx<NetworkManager>();
         auto& Simulation = Reg.ctx<SimulationManager>();
 
-        if (Network.init(&InputQueue, &OutputQueue, Port))
+        if (Network.init(&QueueNetIn, &InputQueue, &OutputQueue, Port))
         {
             Timer MainTimer;
 
@@ -99,79 +104,8 @@ int main(int argc, char* argv[])
                 {
                     DBLK(Messages.report("prg", "Dequeueing incoming message:\n"+Message.Payload, MessageHandler::DEBUG_L3);)
 
-                    Document d;
-                    d.Parse(Message.Payload.c_str());
-                    auto& Command = d["method"];
-
-                    // Server addressed commands
-                    if (Command == "sub_all")
-                    {
-                        Messages.report("prg", "Subscribe to all requested", MessageHandler::INFO);
-                        Reg.emplace_or_replace<PerformanceStatsSubscriptionTag01>(Message.ClientID);
-                        Reg.emplace_or_replace<SimStatsSubscriptionTag01>(Message.ClientID);
-                        QueueSimIn.enqueue(Message);
-                    }
-                    else if (Command == "sub_perf_stats")
-                    {
-                        Messages.report("prg", "Subscribe on performance stats requested", MessageHandler::INFO);
-                        Reg.emplace_or_replace<PerformanceStatsSubscriptionTag01>(Message.ClientID);
-                    }
-                    else if (Command == "unsub_perf_stats")
-                    {
-                        Messages.report("prg", "Unsubscribe on performance stats requested", MessageHandler::INFO);
-                        Reg.remove_if_exists<PerformanceStatsSubscriptionTag01>(Message.ClientID);
-                    }
-                    else if (Command == "sub_sim_stats")
-                    {
-                        Messages.report("prg", "Subscribe on simulation stats requested", MessageHandler::INFO);
-                        Reg.emplace_or_replace<SimStatsSubscriptionTag01>(Message.ClientID);
-                    }
-                    else if (Command == "unsub_sim_stats")
-                    {
-                        Messages.report("prg", "Unsubscribe on simulation stats requested", MessageHandler::INFO);
-                        Reg.remove_if_exists<SimStatsSubscriptionTag01>(Message.ClientID);
-                    }
-                    // Simulation addressed commands
-                    else if (Command == "get_data")
-                    {
-                        Messages.report("prg", "Static galaxy data requested", MessageHandler::INFO);
-                        DBLK(Messages.report("prg", "Appending request to simulation queue", MessageHandler::DEBUG_L1);)
-                        QueueSimIn.enqueue(Message);
-                    }
-                    else if (Command == "shutdown")
-                    {
-                        Messages.report("prg", "Server shutdown requested", MessageHandler::INFO);
-                        Messages.report("prg", "Shutting down...", MessageHandler::INFO);
-                        DBLK(Messages.report("prg", "Appending request to simulation queue", MessageHandler::DEBUG_L1);)
-                        QueueSimIn.enqueue(Message);
-                        std::this_thread::sleep_for(std::chrono::seconds(2));
-                        Network.stop();
-                    }
-                    else if (Command == "start_simulation")
-                    {
-                        Messages.report("prg", "Simulation start requested", MessageHandler::INFO);
-                        DBLK(Messages.report("prg", "Appending request to simulation queue", MessageHandler::DEBUG_L1);)
-                        QueueSimIn.enqueue(Message);
-                    }
-                    else if (Command == "stop_simulation")
-                    {
-                        Messages.report("prg", "Simulation stop requested", MessageHandler::INFO);
-                        DBLK(Messages.report("prg", "Appending request to simulation queue", MessageHandler::DEBUG_L1);)
-                        QueueSimIn.enqueue(Message);
-                    }
-                    else if (Command == "sub_dynamic_data")
-                    {
-                        Messages.report("prg", "Subscribe on dynamic data requested", MessageHandler::INFO);
-                        DBLK(Messages.report("prg", "Appending request to simulation queue", MessageHandler::DEBUG_L1);)
-                        QueueSimIn.enqueue(Message);
-                    }
-                    else if (Command == "sub_system")
-                    {
-                        Messages.report("prg", "Subscribe on star system requested", MessageHandler::INFO);
-                        DBLK(Messages.report("prg", "Appending request to simulation queue", MessageHandler::DEBUG_L1);)
-                        QueueSimIn.enqueue(Message);
-                    }
-
+                    // const auto d = Broker.parse(Message);
+                    Broker.process(Broker.parse(Message));
                 }
                 MainTimer.stop();
                 if (10 - MainTimer.elapsed_ms() > 0.0)

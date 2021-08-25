@@ -14,6 +14,7 @@ set(HEADERS
   components/velocity_component.hpp
   managers/json_manager.hpp
   managers/network_manager.hpp
+  managers/network_message_broker.hpp
   managers/simulation_manager.hpp
   systems/gravity_system.hpp
   systems/integrator_system.hpp
@@ -29,6 +30,7 @@ set(HEADERS
 set(SOURCES
   managers/json_manager.cpp
   managers/network_manager.cpp
+  managers/network_message_broker.cpp
   managers/simulation_manager.cpp
   pwng_server.cpp
   sim_timer.cpp
