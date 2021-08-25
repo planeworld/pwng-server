@@ -127,7 +127,7 @@ void NetworkMessageBroker::executeNet(const NetworkDocument& _d)
     }
     else
     {
-        Messages.report("brk", "Unknown message", MessageHandler::WARNING);
+        Messages.report("brk", "Unknown message"+std::string(c), MessageHandler::WARNING);
     }
 }
 
@@ -142,7 +142,7 @@ void NetworkMessageBroker::executeSim(const NetworkDocument& _d)
     }
     else
     {
-        Messages.report("brk", "Unknown message", MessageHandler::WARNING);
+        Messages.report("brk", "Unknown message"+std::string(c), MessageHandler::WARNING);
     }
 }
 
@@ -169,6 +169,6 @@ void NetworkMessageBroker::distribute(const NetworkDocument& _d)
     }
     else
     {
-        Messages.report("brk", "Unknown message", MessageHandler::WARNING);
+        Messages.report("brk", "Unknown message "+std::string(c), MessageHandler::WARNING);
     }
 }
