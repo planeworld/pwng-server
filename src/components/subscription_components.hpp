@@ -34,6 +34,9 @@ struct SimStatsSubscriptionTag10{};
 
 
 struct DynamicDataSubscriptionComponent{};
-struct GalaxyDataSubscriptionTag{};
+struct GalaxyDataSubscriptionComponent
+{
+    bool Transmitted{false};
+};
 
 #endif // SUBSCRIPTION_COMPONENTS_HPP

@@ -77,7 +77,7 @@ NetworkMessageBroker::NetworkMessageBroker(entt::registry& _Reg,
     ActionsSim_.insert({"sub_galaxy_data", [&](const entt::entity _e)
     {
         DBLK(Messages.report("brk", "Subscribing on galaxy data", MessageHandler::DEBUG_L1);)
-        Reg_.emplace_or_replace<GalaxyDataSubscriptionTag>(_e);
+        Reg_.emplace_or_replace<GalaxyDataSubscriptionComponent>(_e);
     }});
     ActionsSim_.insert({"sub_perf_stats", [&](const entt::entity _e)
     {

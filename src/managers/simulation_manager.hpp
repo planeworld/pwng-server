@@ -75,7 +75,6 @@ class SimulationManager
 
         bool IsRunning_{false};
         bool IsSimRunning_{false};
-        bool IsGalaxyEvent_{true};
 };
 
 #endif // SIMULATION_MANAGER_HPP

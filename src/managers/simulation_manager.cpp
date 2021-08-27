@@ -102,7 +102,7 @@ void SimulationManager::init(moodycamel::ConcurrentQueue<NetworkDocument>* const
     double GalaxyRadiusMax = Alpha / GalaxyPhiMin;
     double GalaxyDistanceMean = 5.0e16;
 
-    Arms = 2;
+    // Arms = 2;
 
     DBLK(Messages.report("sim", "Creating spiral arms", MessageHandler::DEBUG_L1);)
     DBLK(Messages.report("sim", "Distribution of spectral classes (0-6 = M-O):", MessageHandler::DEBUG_L3);)
@@ -366,15 +366,15 @@ void SimulationManager::processSubscriptions(Timer& _t)
             });
         Counter10.restart();
     }
-    if (IsGalaxyEvent_)
-    {
-        Reg_.view<GalaxyDataSubscriptionTag>().each(
-            [this](auto _e)
+    Reg_.view<GalaxyDataSubscriptionComponent>().each(
+        [this](auto _e, auto& _t)
+        {
+            if (!_t.Transmitted)
             {
                 this->queueGalaxyData(_e, 7);
-                IsGalaxyEvent_ = false;
-            });
-    }
+                _t.Transmitted = true;
+            }
+        });
 }
 
 void SimulationManager::queuePerformanceStats(entt::entity _ClientID) const
