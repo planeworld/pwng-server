@@ -13,14 +13,13 @@
 
 - [ ] Procedurally generate planets based on Poisson distribution
 - [ ] Accept subscriptions to specific star systems
-- [ ] Correctly support JSON-RCP including requests, notifications, and results/errors
+- [x] 2021-08-27: Using the broker, JSON-RCP requests will now generate correct response, i.e result or error
 - [x] 2021-08-25: Finally, a message broker has been implemented to centralise message handling. In the future this allows for easier implementation of choosable updade frequencies.
 - [x] 2021-07-01: The server transmits two timestamps now: The first one is a simulation time, which just increments seconds (as a floating point number, so milliseconds are covered) and overflows when reaching a year, counting years in an unsigned integer variable. This is the virtual simulation time which is independend of any system clock and therefore load / processing power. Second is a realtime timestamp which transmits microseconds since epoch (1970-01-01, 00:00 UTC) and should be quite portable. This timestamp is mainly usable for syncing clients and interpolation/extrapolation of frames for smooth realtime visuals.
 - [x] 2021-06-24: There's a very basic integration of box2d for now. Longterm goal ist, to have local box2d world instances where objects need sophisticated physics, i.e. joint-based rigid body interactions. In this proof-of-concept, a very simple, local tire model has been implemented, which consists of the rim (mass) and the tire (several radially distributed point masses) that are connected via springs/dampers (distance joint). For now, it's simply at the coordinate systems origin, later, it will be bound to a parent (e.g. moon, local region of a moon)
 
 #### Desktop Client
 - [ ] Use image pyramids and blur shaders to make the galaxy more smooth/dense looking
-- [ ] Correctly support JSON-RCP including requests, notifications, and results/errors
 - [x] 2021-06-21: The client draws the experimental proof of concept box2d tire model when subscribing to dynamic data
 - [x] 2021-06-13: The user can now subscribe and unsubscibe to star systems by name using the GUI. The request is send, but the server doesn't answer yet. Eventually, star system subscriptions will replace the current subscription to dynamic data. Automatic subscription will later subscibe based on viewport and zoom level.
 - [x] 2021-05-30: Rendering to texture in a different resolution allows for lower resolutions in comparison to SSAA as well. There is now a GUI slider to choose the render resolution factor in the range [0.1, 4.0]. For factors > 1.0 the aforementioned blur shader is parameterized dynamically as a lowpass filter to ensure proper subsampling. A very simplistic LOD is implemented, too, but will be improved later on by replacing the stock shaders in order to reduce draw calls. 
