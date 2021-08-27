@@ -125,9 +125,18 @@ JsonManager& JsonManager::createRequest(const std::string& _Req)
     return *this;
 }
 
+JsonManager& JsonManager::createError()
+{
+    this->createHeaderError();
+    Writer_.StartObject();
+    Writer_.Key("code"); Writer_.Int(-32601);
+    Writer_.Key("message"); Writer_.String("Method not found");
+    Writer_.EndObject();
+    return *this;
+}
+
 JsonManager& JsonManager::createResult()
 {
-    MessageType_ = MessageType::RESULT;
     this->createHeaderResult();
     return *this;
 }
@@ -203,6 +212,13 @@ void JsonManager::createHeaderNotificationRequest(const std::string& _m)
     Writer_.Key("method"); Writer_.String(_m.c_str());
     Writer_.Key("params");
     Writer_.StartObject();
+}
+
+void JsonManager::createHeaderError()
+{
+    MessageType_ = MessageType::ERROR;
+    this->createHeaderJsonRcp();
+    Writer_.Key("error");
 }
 
 void JsonManager::createHeaderResult()

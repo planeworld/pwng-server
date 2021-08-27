@@ -7,10 +7,12 @@
 
 NetworkMessageBroker::NetworkMessageBroker(entt::registry& _Reg,
                     moodycamel::ConcurrentQueue<NetworkDocument>* _QueueToSim,
-                    moodycamel::ConcurrentQueue<NetworkDocument>* _QueueToNet) :
+                    moodycamel::ConcurrentQueue<NetworkDocument>* _QueueToNet,
+                    moodycamel::ConcurrentQueue<NetworkMessage>* _QueueOut) :
                     Reg_(_Reg),
                     QueueToSim_(_QueueToSim),
-                    QueueToNet_(_QueueToNet)
+                    QueueToNet_(_QueueToNet),
+                    QueueOut_(_QueueOut)
 {
     auto& Messages = Reg_.ctx<MessageHandler>();
     Domains_.insert({"start_simulation", [&](const NetworkDocument& _m)
@@ -124,10 +126,12 @@ void NetworkMessageBroker::executeNet(const NetworkDocument& _d)
     if (ActionsNet_.find(c) != ActionsNet_.end())
     {
         ActionsNet_[c](_d.ClientID);
+        this->sendSuccess(_d.ClientID, (*_d.Payload)["id"].GetUint());
     }
     else
     {
         Messages.report("brk", "Unknown message"+std::string(c), MessageHandler::WARNING);
+        this->sendError(_d.ClientID, (*_d.Payload)["id"].GetUint());
     }
 }
 
@@ -139,10 +143,12 @@ void NetworkMessageBroker::executeSim(const NetworkDocument& _d)
     if (ActionsSim_.find(c) != ActionsSim_.end())
     {
         ActionsSim_[c](_d.ClientID);
+        this->sendSuccess(_d.ClientID, (*_d.Payload)["id"].GetUint());
     }
     else
     {
         Messages.report("brk", "Unknown message"+std::string(c), MessageHandler::WARNING);
+        this->sendError(_d.ClientID, (*_d.Payload)["id"].GetUint());
     }
 }
 
@@ -170,5 +176,23 @@ void NetworkMessageBroker::distribute(const NetworkDocument& _d)
     else
     {
         Messages.report("brk", "Unknown message "+std::string(c), MessageHandler::WARNING);
+        this->sendError(_d.ClientID, (*_d.Payload)["id"].GetUint());
     }
+}
+
+void NetworkMessageBroker::sendError(JsonManager::ClientIDType _ClientID, JsonManager::RequestIDType _MessageID) const
+{
+    auto& Json = Reg_.ctx<JsonManager>();
+    Json.createError()
+        .finalise(_MessageID);
+    QueueOut_->enqueue({_ClientID, Json.getString()});
+}
+
+
+void NetworkMessageBroker::sendSuccess(JsonManager::ClientIDType _ClientID, JsonManager::RequestIDType _MessageID) const
+{
+    auto& Json = Reg_.ctx<JsonManager>();
+    Json.createResult(true)
+        .finalise(_MessageID);
+    QueueOut_->enqueue({_ClientID, Json.getString()});
 }

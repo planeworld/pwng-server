@@ -459,17 +459,6 @@ void SimulationManager::run()
         while (QueueSimIn_->try_dequeue(d))
         {
             Broker.executeSim(d);
-
-            // auto& Command = (*d.Payload)["method"];
-
-            // if (Command == "get_data") this->queueGalaxyData(d.ClientID, (*d.Payload)["id"].GetUint());
-            // else if (Command == "sub_system")
-            // {
-            //     auto& Json = Reg_.ctx<JsonManager>();
-            //     Json.createResult(true)
-            //         .finalise((*d.Payload)["id"].GetUint());
-            //     OutputQueue_->enqueue({d.ClientID, Json.getString()});
-            // }
         }
         QueueInTimer_.stop();
 
@@ -487,16 +476,6 @@ void SimulationManager::run()
 
         this->processSubscriptions(TimerSubscriptions);
 
-        // if (TimerServerStatusSubscription.time() >= 0.1)
-        // {
-            // Reg_.view<ServerStatusSubscriptionComponent>().each(
-                // [this](auto _e)
-                // {
-                    // this->queueServerStats(_e);
-                // });
-            // TimerServerStatusSubscription.restart();
-
-        // }
         Reg_.view<DynamicDataSubscriptionComponent>().each(
             [this](auto _e)
             {

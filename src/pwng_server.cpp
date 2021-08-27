@@ -83,7 +83,7 @@ int main(int argc, char* argv[])
 
         Reg.set<JsonManager>(Reg);
         Reg.set<NetworkManager>(Reg);
-        Reg.set<NetworkMessageBroker>(Reg, &QueueSimIn, &QueueNetIn);
+        Reg.set<NetworkMessageBroker>(Reg, &QueueSimIn, &QueueNetIn, &OutputQueue);
         Reg.set<SimulationManager>(Reg);
         auto& Broker = Reg.ctx<NetworkMessageBroker>();
         auto& Network = Reg.ctx<NetworkManager>();

@@ -7,6 +7,7 @@
 
 #include <concurrentqueue/concurrentqueue.h>
 #include <entt/entity/registry.hpp>
+#include "json_manager.hpp"
 #include "network_message.hpp"
 
 class NetworkMessageBroker
@@ -16,7 +17,8 @@ class NetworkMessageBroker
 
         explicit NetworkMessageBroker(entt::registry& _Reg,
                                       moodycamel::ConcurrentQueue<NetworkDocument>* _QueueToSim,
-                                      moodycamel::ConcurrentQueue<NetworkDocument>* _QueueToNet);
+                                      moodycamel::ConcurrentQueue<NetworkDocument>* _QueueToNet,
+                                      moodycamel::ConcurrentQueue<NetworkMessage>* _QueueOut);
 
         void process(const NetworkDocument& _d);
         void executeNet(const NetworkDocument& _d);
@@ -27,6 +29,8 @@ class NetworkMessageBroker
     private:
 
         void distribute(const NetworkDocument& _d);
+        void sendError(JsonManager::ClientIDType _ClientID, JsonManager::RequestIDType _MessageID) const;
+        void sendSuccess(JsonManager::ClientIDType _ClientID, JsonManager::RequestIDType _MessageID) const;
 
         entt::registry&  Reg_;
 
@@ -37,6 +41,7 @@ class NetworkMessageBroker
 
         moodycamel::ConcurrentQueue<NetworkDocument>* QueueToSim_{nullptr};
         moodycamel::ConcurrentQueue<NetworkDocument>* QueueToNet_{nullptr};
+        moodycamel::ConcurrentQueue<NetworkMessage>* QueueOut_{nullptr};
 
 };
 
