@@ -15,13 +15,13 @@ NetworkMessageBroker::NetworkMessageBroker(entt::registry& _Reg,
                     QueueOut_(_QueueOut)
 {
     auto& Messages = Reg_.ctx<MessageHandler>();
-    Domains_.insert({"start_simulation", [&](const NetworkDocument& _m)
+    Domains_.insert({"cmd_start_simulation", [&](const NetworkDocument& _m)
     {
         Messages.report("brk", "Simulation start requested", MessageHandler::INFO);
         DBLK(Messages.report("brk", "Appending request to simulation queue", MessageHandler::DEBUG_L1);)
         QueueToSim_->enqueue(_m);
     }});
-    Domains_.insert({"stop_simulation", [&](const NetworkDocument& _m)
+    Domains_.insert({"cmd_stop_simulation", [&](const NetworkDocument& _m)
     {
         Messages.report("brk", "Simulation stop requested", MessageHandler::INFO);
         DBLK(Messages.report("brk", "Appending request to simulation queue", MessageHandler::DEBUG_L1);)
@@ -58,7 +58,7 @@ NetworkMessageBroker::NetworkMessageBroker(entt::registry& _Reg,
         QueueToSim_->enqueue(_m);
     }});
 
-    ActionsMain_.insert({"shutdown", [&](const entt::entity _e)
+    ActionsMain_.insert({"cmd_shutdown", [&](const entt::entity _e)
     {
         Messages.report("brk", "Server shutdown requested", MessageHandler::INFO);
         DBLK(Messages.report("brk", "Shutting down simulation...", MessageHandler::DEBUG_L1);)
@@ -69,6 +69,16 @@ NetworkMessageBroker::NetworkMessageBroker(entt::registry& _Reg,
         DBLK(Messages.report("brk", "...done", MessageHandler::DEBUG_L1);)
     }});
 
+    ActionsSim_.insert({"cmd_start_simulation", [&](const entt::entity _e)
+    {
+        DBLK(Messages.report("brk", "Starting simulation", MessageHandler::DEBUG_L1);)
+        Reg_.ctx<SimulationManager>().start();
+    }});
+    ActionsSim_.insert({"cmd_stop_simulation", [&](const entt::entity _e)
+    {
+        DBLK(Messages.report("brk", "Stopping simulation", MessageHandler::DEBUG_L1);)
+        Reg_.ctx<SimulationManager>().stop();
+    }});
     ActionsSim_.insert({"sub_dynamic_data", [&](const entt::entity _e)
     {
         DBLK(Messages.report("brk", "Subscribing on dynamic data", MessageHandler::DEBUG_L1);)
@@ -88,16 +98,6 @@ NetworkMessageBroker::NetworkMessageBroker(entt::registry& _Reg,
     {
         DBLK(Messages.report("brk", "Subscribing on simulation stats", MessageHandler::DEBUG_L1);)
         Reg_.emplace_or_replace<SimStatsSubscriptionTag01>(_e);
-    }});
-    ActionsSim_.insert({"start_simulation", [&](const entt::entity _e)
-    {
-        DBLK(Messages.report("brk", "Starting simulation", MessageHandler::DEBUG_L1);)
-        Reg_.ctx<SimulationManager>().start();
-    }});
-    ActionsSim_.insert({"stop_simulation", [&](const entt::entity _e)
-    {
-        DBLK(Messages.report("brk", "Stopping simulation", MessageHandler::DEBUG_L1);)
-        Reg_.ctx<SimulationManager>().stop();
     }});
 }
 
