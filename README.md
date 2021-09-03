@@ -20,6 +20,7 @@
 
 #### Desktop Client
 - [ ] Use image pyramids and blur shaders to make the galaxy more smooth/dense looking
+- [x] 2021-09-03: An additional branch *glfw* has been added which can be alternatively chosen in order to use GLFW instead of SDL2 for window initialisation, OpenGL context creation, and input handling.
 - [x] 2021-06-21: The client draws the experimental proof of concept box2d tire model when subscribing to dynamic data
 - [x] 2021-06-13: The user can now subscribe and unsubscibe to star systems by name using the GUI. The request is send, but the server doesn't answer yet. Eventually, star system subscriptions will replace the current subscription to dynamic data. Automatic subscription will later subscibe based on viewport and zoom level.
 - [x] 2021-05-30: Rendering to texture in a different resolution allows for lower resolutions in comparison to SSAA as well. There is now a GUI slider to choose the render resolution factor in the range [0.1, 4.0]. For factors > 1.0 the aforementioned blur shader is parameterized dynamically as a lowpass filter to ensure proper subsampling. A very simplistic LOD is implemented, too, but will be improved later on by replacing the stock shaders in order to reduce draw calls. 
