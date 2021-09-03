@@ -56,7 +56,7 @@ Based on my positive experiences from [BattleSub](https://github.com/bfeldpw/bat
 
 ## Installation and running
 
-By default, pwng-server and pwng-client will be installed locally with all their dependencies.
+By default, pwng-server and pwng-client will be installed locally with all their dependencies. While the code should be portable, for now it is only tested against Linux. Hence, helper scripts are tailored for Linux shells for now.
 
 There are 4 scripts located within the *./scripts* subdirectory:
 - *clean_all* removes all build files and installations
@@ -66,6 +66,7 @@ There are 4 scripts located within the *./scripts* subdirectory:
 
 ### Dependencies
 The server has no external dependencies that need to be manually installed. All dependencies will be automatically installed locally by using the *build_dependencies* script in *./scripts/*.
+
 The client depends on SDL2 which has to be manually installed on the system. There is also the possibility to use GLFW3 instead of SDL2, choose the *glfw* branch in that case. All other dependencies will be automatically installed locally by using the *build_dependencies* script in *./scripts/*.
 
 ## Behind the scenes
