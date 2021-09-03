@@ -54,6 +54,20 @@ So, sometime ago I just needed a break, started some new pet project [BattleSub]
 
 Based on my positive experiences from [BattleSub](https://github.com/bfeldpw/battlesub) with [Magnum](https://github.com/mosra/magnum) and [EnTT](https://github.com/skypjack/entt) and decades of lessons learned concerning Planeworld, I decided to restart my passion project by consequently using a client server mechanic, and utilising EnTT and Magnum Graphics, as well as some others (credits will follow). While the server component doesn't rely on a graphical interface, check out Magnum Graphics used by the desktop client, too.
 
+## Installation and running
+
+By default, pwng-server and pwng-client will be installed locally with all their dependencies.
+
+There are 4 scripts located within the *./scripts* subdirectory:
+- *clean_all* removes all build files and installations
+- *build_dependencies* builds all dependencies by fetching, compiling, and installing them locally
+- *build [DEBUG]* builds pwng-server/pwng-client, the optional *DEBUG* parameter will build in debug mode, accordingly.
+- *run* starts pwng-server/pwng-client by setting the environment to the local installation and executing the binary.
+
+### Dependencies
+The server has no external dependencies that need to be manually installed. All dependencies will be automatically installed locally by using the *build_dependencies* script in *./scripts/*.
+The client depends on SDL2 which has to be manually installed on the system. There is also the possibility to use GLFW3 instead of SDL2, choose the *glfw* branch in that case. All other dependencies will be automatically installed locally by using the *build_dependencies* script in *./scripts/*.
+
 ## Behind the scenes
 
 ### EnTT
