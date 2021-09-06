@@ -29,7 +29,7 @@ auto parseArguments(int argc, char* argv[], entt::registry& _Reg)
              "Port to listen to", 1}
         }};
 
-    MessageHandler::ReportLevelType DebugLevel = MessageHandler::DEBUG_L3;
+    MessageHandler::ReportLevelType DebugLevel = MessageHandler::INFO;
 
     argagg::parser_results Args;
     try
@@ -59,9 +59,7 @@ auto parseArguments(int argc, char* argv[], entt::registry& _Reg)
     if (Args["debug"])
     {
         int d = Args["debug"];
-        if (d == 0)
-            DebugLevel = MessageHandler::INFO;
-        else if (d == 1)
+        if (d == 1)
             DebugLevel = MessageHandler::DEBUG_L1;
         else if (d == 2)
             DebugLevel = MessageHandler::DEBUG_L2;
@@ -126,7 +124,6 @@ int main(int argc, char* argv[])
                 {
                     DBLK(Messages.report("prg", "Dequeueing incoming message:\n"+Message.Payload, MessageHandler::DEBUG_L3);)
 
-                    // const auto d = Broker.parse(Message);
                     Broker.process(Broker.parse(Message));
                 }
                 MainTimer.stop();
