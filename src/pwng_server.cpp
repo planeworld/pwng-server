@@ -15,17 +15,21 @@
 #include "subscription_components.hpp"
 #include "velocity_component.hpp"
 
-constexpr int PWNG_ABORT_STARTUP = -1;
+int PWNG_ABORT_STARTUP = -1;
 
-int parseArguments(int argc, char* argv[], entt::registry& _Reg)
+auto parseArguments(int argc, char* argv[], entt::registry& _Reg)
 {
     argagg::parser ArgParser
         {{
+            {"debug", {"-d", "--debug"},
+             "debug level (0-3)", 1},
             {"help", {"-h", "--help"},
              "Shows this help message", 0},
             {"port", {"-p", "--port"},
              "Port to listen to", 1}
         }};
+
+    MessageHandler::ReportLevelType DebugLevel = MessageHandler::DEBUG_L3;
 
     argagg::parser_results Args;
     try
@@ -36,14 +40,14 @@ int parseArguments(int argc, char* argv[], entt::registry& _Reg)
     {
         _Reg.ctx<MessageHandler>().report("prg", "Couldn't parse command line arguments, error: "+
                                            std::string(e.what()));
-        return PWNG_ABORT_STARTUP;
+        return std::tie(PWNG_ABORT_STARTUP, DebugLevel);
     }
     if (Args["help"])
     {
         std::stringstream Message;
-        Message << ArgParser;
+        Message << "USAGE: \n\n" << ArgParser;
         _Reg.ctx<MessageHandler>().report("prg", Message.str(), MessageHandler::INFO);
-        return PWNG_ABORT_STARTUP;
+        return std::tie(PWNG_ABORT_STARTUP, DebugLevel);
     }
 
     int Port = 9002;
@@ -52,7 +56,20 @@ int parseArguments(int argc, char* argv[], entt::registry& _Reg)
         Port = Args["port"];
     }
 
-    return Port;
+    if (Args["debug"])
+    {
+        int d = Args["debug"];
+        if (d == 0)
+            DebugLevel = MessageHandler::INFO;
+        else if (d == 1)
+            DebugLevel = MessageHandler::DEBUG_L1;
+        else if (d == 2)
+            DebugLevel = MessageHandler::DEBUG_L2;
+        else if (d == 3)
+            DebugLevel = MessageHandler::DEBUG_L3;
+    }
+
+    return std::tie(Port, DebugLevel);
 }
 
 int main(int argc, char* argv[])
@@ -71,9 +88,14 @@ int main(int argc, char* argv[])
     Messages.registerSource("jsn", "jsn");
     Messages.registerSource("brk", "brk");
     Messages.setColored(true);
-    Messages.setLevel(MessageHandler::DEBUG_L3);
 
-    int Port = parseArguments(argc, argv, Reg);
+    int Port = 9002;
+    MessageHandler::ReportLevelType DebugLevel = MessageHandler::DEBUG_L3;
+
+    std::tie(Port, DebugLevel) = parseArguments(argc, argv, Reg);
+
+    Messages.setLevel(DebugLevel);
+
     if (Port != PWNG_ABORT_STARTUP)
     {
         moodycamel::ConcurrentQueue<NetworkMessage> InputQueue;
