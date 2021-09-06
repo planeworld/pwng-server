@@ -68,10 +68,7 @@ void NetworkManager::onClose(websocketpp::connection_hdl _Connection)
     ConHdlToID_.erase(_Connection);
     Reg_.destroy(entt::entity(ID));
 
-    Messages.report("net", "Connection to client closed", MessageHandler::INFO);
-
-    DBLK(Messages.report("net", "Connection ID was: "+std::to_string(entt::to_integral(ID)), MessageHandler::DEBUG_L1);)
-    DBLK(Messages.report("net", std::to_string(Connections_.size())+ " open connections.", MessageHandler::DEBUG_L2);)
+    Messages.report("net", "Connection to client ID "+std::to_string(entt::to_integral(ID)) + " closed ("+std::to_string(Connections_.size())+ " open connection(s)).", MessageHandler::INFO);
 }
 
 void NetworkManager::onMessage(websocketpp::connection_hdl _Connection, ServerType::message_ptr _Msg)
@@ -94,7 +91,6 @@ bool NetworkManager::onValidate(websocketpp::connection_hdl _Connection)
     websocketpp::uri_ptr Uri = Connection->get_uri();
 
     DBLK(Messages.report("net", "Query string: " + Uri->get_query(), MessageHandler::DEBUG_L1);)
-    Messages.report("net", "Connection validated", MessageHandler::INFO);
 
     std::lock_guard<std::mutex> Lock(ConnectionsLock_);
 
@@ -105,8 +101,7 @@ bool NetworkManager::onValidate(websocketpp::connection_hdl _Connection)
     ConIDToHdl_[e] = _Connection;
     ConHdlToID_[_Connection] = e;
 
-    DBLK(Messages.report("net", "Connection ID is: "+std::to_string(entt::to_integral(e)), MessageHandler::DEBUG_L1);)
-    DBLK(Messages.report("net", std::to_string(Connections_.size())+ " open connection(s).", MessageHandler::DEBUG_L2);)
+    Messages.report("net", "Connection to client ID " + std::to_string(entt::to_integral(e)) + " validated ("+std::to_string(Connections_.size())+ " open connection(s)).", MessageHandler::INFO);
 
     return true;
 }
