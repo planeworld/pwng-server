@@ -5,7 +5,11 @@
 
 #include <entt/entity/registry.hpp>
 #include <rapidjson/stringbuffer.h>
-#include <rapidjson/writer.h>
+#ifdef NDEBUG
+        #include <rapidjson/writer.h>
+#else
+        #include <rapidjson/prettywriter.h>
+#endif
 
 #include "message_handler.hpp"
 
@@ -82,7 +86,11 @@ class JsonManager
         entt::registry& Reg_;
 
         StringBuffer Buffer_;
-        Writer<StringBuffer> Writer_{Buffer_};
+        #ifdef NDEBUG
+                Writer<StringBuffer> Writer_{Buffer_};
+        #else
+                PrettyWriter<StringBuffer> Writer_{Buffer_};
+        #endif
         MessageType MessageType_{MessageType::REQUEST};
 
         DBLK(
