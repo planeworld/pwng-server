@@ -180,7 +180,10 @@ void JsonManager::finalise(RequestIDType _ReqID)
     else // if (MessageType_ == MessageType::RESULT || MessageType_ == MessageType::ERROR)
     {
         Writer_.Key("id");
-        Writer_.Uint(_ReqID);
+        if (_ReqID != 0)
+            Writer_.Uint(_ReqID);
+        else
+            Writer_.Null();
     }
     Writer_.EndObject();
 }
