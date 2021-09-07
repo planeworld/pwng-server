@@ -16,12 +16,14 @@ class SimTimer
         std::uint32_t getMinutesFraction() const;
         std::uint32_t getSecondsFraction() const;
         double        getSeconds() const;
+        double        getAcceleration() const;
         std::string   toStamp() const;
         
         bool isActive() const;
 
         void fromStamp(const std::string& _s);
         void inc(const double& _Seconds);
+        void setAcceleration(double _a);
         void start();
         void stop();
         void toggle();
@@ -29,6 +31,7 @@ class SimTimer
     private:
         
         bool            Active_{false};
+        double          Acceleration_{1.0};
         double          Seconds_{0.0};
         std::uint32_t   Years_{0u};
 };
@@ -71,6 +74,11 @@ inline double SimTimer::getSeconds() const
     return Seconds_;
 }
 
+inline double SimTimer::getAcceleration() const
+{
+    return Acceleration_;
+}
+
 inline std::string SimTimer::toStamp() const
 {
     return std::to_string(Years_) + ":" + std::to_string(Seconds_);
@@ -79,6 +87,11 @@ inline std::string SimTimer::toStamp() const
 inline bool SimTimer::isActive() const
 {
     return Active_;
+}
+
+inline void SimTimer::setAcceleration(double _a)
+{
+    Acceleration_ = _a;
 }
 
 #endif // SIM_TIMER_HPP

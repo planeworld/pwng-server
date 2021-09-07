@@ -19,7 +19,7 @@ void SimTimer::inc(const double& _Seconds)
     constexpr double S_PER_Y = 365.0*24.0*60.0*60.0;
     if (Active_)
     {
-        Seconds_ += _Seconds;
+        Seconds_ += _Seconds * Acceleration_;
         while (Seconds_ >= S_PER_Y)
         {
             Seconds_ -= S_PER_Y;
