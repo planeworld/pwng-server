@@ -9,6 +9,8 @@
 
 ### What happened and what's to come
 
+This section should give an overview about major implementation topics, mostly about things that directly affect the experience. It's hopefully a little more readable than the git commits for those who want to follow the development.
+
 #### Server
 
 - [ ] Procedurally generate planets based on Poisson distribution
