@@ -88,6 +88,15 @@ JsonManager& JsonManager::addValue(std::uint32_t _v)
     return *this;
 }
 
+JsonManager& JsonManager::addValue(int _v)
+{
+    DBLK(this->checkCreate();)
+
+    Writer_.Int(_v);
+
+    return *this;
+}
+
 JsonManager& JsonManager::addValue(const char* _v)
 {
     DBLK(this->checkCreate();)

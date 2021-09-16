@@ -93,6 +93,8 @@ NetworkMessageBroker::NetworkMessageBroker(entt::registry& _Reg,
         if (r.Success)
         {
             auto Accel = JsonManager::getParams(_d)[0].GetDouble();
+            if (Accel > 1.0e6) Accel = 1.0e6;
+            else if (Accel < 0.1) Accel = 0.1;
             Reg_.ctx<SimulationManager>().setAccel(Accel);
             this->sendSuccess(_d.ClientID, (*_d.Payload)["id"].GetUint());
         }

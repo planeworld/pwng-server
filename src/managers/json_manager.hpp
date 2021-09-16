@@ -83,6 +83,7 @@ class JsonManager
 
         JsonManager& addValue(double _v);
         JsonManager& addValue(std::uint32_t _v);
+        JsonManager& addValue(int _v);
         JsonManager& addValue(const char* _v);
 
         ParamCheckResult checkParams(const NetworkDocument& _d, std::vector<ParamsType> _p);
