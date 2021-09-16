@@ -36,6 +36,8 @@ class SimulationManager
         void stop();
         void shutdown();
 
+        void setAccel(double _a) {SimTime_.setAcceleration(_a);}
+
 
     private:
 
@@ -47,7 +49,6 @@ class SimulationManager
         void queueGalaxyData(entt::entity _ClientID, JsonManager::RequestIDType _ReqID) const;
         void queuePerformanceStats(entt::entity _ClientID) const;
         void queueSimStats(entt::entity _ClientID) const;
-        // void queueServerStats(entt::entity _ClientID);
         void queueTireData(entt::entity _ClientID) const;
         void run();
 

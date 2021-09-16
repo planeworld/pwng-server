@@ -2,6 +2,7 @@
 #define JSON_MANAGER_HPP
 
 #include <string>
+#include <vector>
 
 #include <entt/entity/registry.hpp>
 #include <rapidjson/stringbuffer.h>
@@ -12,6 +13,7 @@
 #endif
 
 #include "message_handler.hpp"
+#include "network_message.hpp"
 
 using namespace rapidjson;
 
@@ -28,13 +30,34 @@ class JsonManager
         // rapidjson's writer has to be chosen
         using RequestIDType = std::uint32_t;
 
+        enum class ErrorType : int
+        {
+            METHOD,
+            PARAMS,
+            PARSE,
+            REQUEST
+        };
+        enum class ParamsType : int
+        {
+            NUMBER,
+            STRING
+        };
+
+        struct ParamCheckResult
+        {
+            bool Success{true};
+            ErrorType Error{ErrorType::METHOD};
+            ClientIDType ClientID{0};
+            RequestIDType RequestID{0};
+        };
+
         explicit JsonManager(entt::registry& _Reg) : Reg_(_Reg) {}
 
         JsonManager& createNotification(const std::string& _Notification);
         JsonManager& createRequest(const std::string& _Req);
 
         // Errors
-        JsonManager& createError();
+        JsonManager& createError(ErrorType _e);
 
         // Single value results
         JsonManager& createResult(const bool _r);
@@ -60,10 +83,18 @@ class JsonManager
 
         JsonManager& addValue(double _v);
         JsonManager& addValue(std::uint32_t _v);
+        JsonManager& addValue(const char* _v);
+
+        ParamCheckResult checkParams(const NetworkDocument& _d, std::vector<ParamsType> _p);
 
         void finalise(RequestIDType _ReqID = 0);
         RequestIDType getRequestID() const {return RequestID_;}
         const char* getString() const {return Buffer_.GetString();}
+
+        static auto getParams(const NetworkDocument& _d)
+        {
+            return (*_d.Payload)["params"].GetArray();
+        }
 
     private:
 
@@ -79,6 +110,8 @@ class JsonManager
         void createHeaderNotificationRequest(const std::string& _m);
         void createHeaderError();
         void createHeaderResult();
+
+        void checkParamBegin();
         DBLK(
             void checkCreate();
         )
@@ -99,6 +132,7 @@ class JsonManager
         )
 
         std::string Params_;
+        bool HasParams_{false};
 
         RequestIDType RequestID_{0};
 };

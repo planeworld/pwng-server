@@ -29,15 +29,16 @@ class NetworkMessageBroker
     private:
 
         void distribute(const NetworkDocument& _d);
-        void sendError(JsonManager::ClientIDType _ClientID, JsonManager::RequestIDType _MessageID) const;
+        void sendError(JsonManager::ErrorType _e, JsonManager::ClientIDType _ClientID, JsonManager::RequestIDType _MessageID) const;
+        void sendError(JsonManager::ParamCheckResult _r) const;
         void sendSuccess(JsonManager::ClientIDType _ClientID, JsonManager::RequestIDType _MessageID) const;
 
         entt::registry&  Reg_;
 
         std::unordered_map<std::string, std::function<void(const NetworkDocument&)>> Domains_;
-        std::unordered_map<std::string, std::function<void(const entt::entity)>> ActionsMain_;
-        std::unordered_map<std::string, std::function<void(const entt::entity)>> ActionsNet_;
-        std::unordered_map<std::string, std::function<void(const entt::entity)>> ActionsSim_;
+        std::unordered_map<std::string, std::function<void(const NetworkDocument&)>> ActionsMain_;
+        std::unordered_map<std::string, std::function<void(const NetworkDocument&)>> ActionsNet_;
+        std::unordered_map<std::string, std::function<void(const NetworkDocument&)>> ActionsSim_;
 
         moodycamel::ConcurrentQueue<NetworkDocument>* QueueToSim_{nullptr};
         moodycamel::ConcurrentQueue<NetworkDocument>* QueueToNet_{nullptr};

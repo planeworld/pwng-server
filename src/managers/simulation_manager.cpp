@@ -491,7 +491,7 @@ void SimulationManager::run()
         {
             World_->Step(SimStepSize_*1.0e-3, 8, 3);
             SysGravity_.calculateForces();
-            SysIntegrator_.integrate(SimStepSize_*1.0e-3);
+            SysIntegrator_.integrate(SimStepSize_*1.0e-3*SimTime_.getAcceleration());
             SimTime_.inc(SimStepSize_*1.0e-3);
         }
         PhysicsTimer_.stop();

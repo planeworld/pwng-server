@@ -2,10 +2,13 @@
 
 #include <iostream>
 
+#include <rapidjson/document.h>
+
 JsonManager& JsonManager::addParam(const std::string& _Name, bool _v)
 {
     DBLK(this->checkCreate();)
 
+    this->checkParamBegin();
     Writer_.Key(_Name.c_str());
     Writer_.Bool(_v);
 
@@ -16,6 +19,7 @@ JsonManager& JsonManager::addParam(const std::string& _Name, double _v)
 {
     DBLK(this->checkCreate();)
 
+    this->checkParamBegin();
     Writer_.Key(_Name.c_str());
     Writer_.Double(_v);
 
@@ -26,6 +30,7 @@ JsonManager& JsonManager::addParam(const std::string& _Name, std::uint32_t _v)
 {
     DBLK(this->checkCreate();)
 
+    this->checkParamBegin();
     Writer_.Key(_Name.c_str());
     Writer_.Uint(_v);
 
@@ -36,6 +41,7 @@ JsonManager& JsonManager::addParam(const std::string& _Name, std::uint64_t _v)
 {
     DBLK(this->checkCreate();)
 
+    this->checkParamBegin();
     Writer_.Key(_Name.c_str());
     Writer_.Uint64(_v);
 
@@ -46,6 +52,7 @@ JsonManager& JsonManager::addParam(const std::string& _Name, const std::string& 
 {
     DBLK(this->checkCreate();)
 
+    this->checkParamBegin();
     Writer_.Key(_Name.c_str());
     Writer_.String(_v.c_str());
 
@@ -56,6 +63,7 @@ JsonManager& JsonManager::addParam(const std::string& _Name, const char* _v)
 {
     DBLK(this->checkCreate();)
 
+    this->checkParamBegin();
     Writer_.Key(_Name.c_str());
     Writer_.String(_v);
 
@@ -76,6 +84,15 @@ JsonManager& JsonManager::addValue(std::uint32_t _v)
     DBLK(this->checkCreate();)
 
     Writer_.Uint(_v);
+
+    return *this;
+}
+
+JsonManager& JsonManager::addValue(const char* _v)
+{
+    DBLK(this->checkCreate();)
+
+    Writer_.String(_v);
 
     return *this;
 }
@@ -125,12 +142,29 @@ JsonManager& JsonManager::createRequest(const std::string& _Req)
     return *this;
 }
 
-JsonManager& JsonManager::createError()
+JsonManager& JsonManager::createError(ErrorType _e)
 {
     this->createHeaderError();
     Writer_.StartObject();
-    Writer_.Key("code"); Writer_.Int(-32601);
-    Writer_.Key("message"); Writer_.String("Method not found");
+    switch (_e)
+    {
+        case ErrorType::METHOD:
+            Writer_.Key("code"); Writer_.Int(-32601);
+            Writer_.Key("message"); Writer_.String("Method not found");
+            break;
+        case ErrorType::PARAMS:
+            Writer_.Key("code"); Writer_.Int(-32602);
+            Writer_.Key("message"); Writer_.String("Invalid params");
+            break;
+        case ErrorType::PARSE:
+            Writer_.Key("code"); Writer_.Int(-32700);
+            Writer_.Key("message"); Writer_.String("Parse error");
+            break;
+        case ErrorType::REQUEST:
+            Writer_.Key("code"); Writer_.Int(-32600);
+            Writer_.Key("message"); Writer_.String("Invalid Request");
+            break;
+    }
     Writer_.EndObject();
     return *this;
 }
@@ -162,6 +196,92 @@ JsonManager& JsonManager::createResult(const std::string& _r)
     return *this;
 }
 
+JsonManager::ParamCheckResult JsonManager::checkParams(const NetworkDocument& _d, std::vector<ParamsType> _p)
+{
+    ParamCheckResult ReturnValue;
+
+    auto& Messages = Reg_.ctx<MessageHandler>();
+
+    if (_d.Payload->HasMember("params"))
+    {
+        const auto& ParamsArray = (*_d.Payload)["params"].GetArray();
+        if (ParamsArray.Size() == _p.size())
+        {
+            for (auto i=0u; i < ParamsArray.Size(); ++i)
+            {
+                bool ParamTypeOkay{false};
+                switch (_p[0])
+                {
+                    case ParamsType::NUMBER:
+                        if (ParamsArray[0].IsNumber())
+                        {
+                            ReturnValue = {true, ErrorType::PARAMS, _d.ClientID, 0};
+                            ParamTypeOkay = true;
+                        }
+                        break;
+                    case ParamsType::STRING:
+                        if (ParamsArray[0].IsString())
+                        {
+                            ReturnValue = {true, ErrorType::PARAMS, _d.ClientID, 0};
+                            ParamTypeOkay = true;
+                        }
+                        break;
+                }
+                if (!ParamTypeOkay)
+                {
+                    Messages.report("jsn", "Wrong parameter types.", MessageHandler::WARNING);
+                    if (_d.Payload->HasMember("id"))
+                    {
+                        ReturnValue = {false, ErrorType::PARAMS, _d.ClientID, (*_d.Payload)["id"].GetUint()};
+                    }
+                    else
+                    {
+                        Messages.report("jsn", "Invalid request object, no id send", MessageHandler::WARNING);
+                        ReturnValue = {false, ErrorType::PARAMS, _d.ClientID, 0};
+                        ReturnValue = {false, ErrorType::REQUEST, _d.ClientID, 0};
+                    }
+                }
+            }
+        }
+        else
+        {
+            Messages.report("jsn", "Wrong number of parameters: "+
+                            std::to_string(ParamsArray.Size())+" of "+
+                            std::to_string(_p.size()), MessageHandler::WARNING);
+            if (_d.Payload->HasMember("id"))
+            {
+                ReturnValue = {false, ErrorType::PARAMS, _d.ClientID, (*_d.Payload)["id"].GetUint()};
+            }
+            else
+            {
+                Messages.report("jsn", "Invalid request object, no id send", MessageHandler::WARNING);
+                ReturnValue = {false, ErrorType::PARAMS, _d.ClientID, 0};
+                ReturnValue = {false, ErrorType::REQUEST, _d.ClientID, 0};
+            }
+        }
+    }
+    else
+    {
+        bool r = true;
+        if (_p.size() > 0)
+        {
+            r = false;
+            Messages.report("jsn", "Parameter member missing: 0 of " + std::to_string(_p.size()) + " parameters.", MessageHandler::WARNING);
+        }
+        if (_d.Payload->HasMember("id"))
+        {
+            ReturnValue = {r, ErrorType::PARAMS, _d.ClientID, (*_d.Payload)["id"].GetUint()};
+        }
+        else
+        {
+            Messages.report("jsn", "Invalid request object, no id send", MessageHandler::WARNING);
+            ReturnValue = {false, ErrorType::REQUEST, _d.ClientID, 0};
+        }
+    }
+
+    return ReturnValue;
+}
+
 void JsonManager::finalise(RequestIDType _ReqID)
 {
     DBLK(this->checkCreate();
@@ -170,7 +290,7 @@ void JsonManager::finalise(RequestIDType _ReqID)
     )
     if (MessageType_ == MessageType::REQUEST || MessageType_ == MessageType::NOTIFICATION)
     {
-        Writer_.EndObject();
+        if (HasParams_) Writer_.EndObject();
         if (MessageType_ == MessageType::REQUEST)
         {
             Writer_.Key("id");
@@ -186,6 +306,7 @@ void JsonManager::finalise(RequestIDType _ReqID)
             Writer_.Null();
     }
     Writer_.EndObject();
+    HasParams_ = false;
 }
 
 void JsonManager::createHeaderJsonRcp()
@@ -213,8 +334,6 @@ void JsonManager::createHeaderNotificationRequest(const std::string& _m)
     this->createHeaderJsonRcp();
 
     Writer_.Key("method"); Writer_.String(_m.c_str());
-    Writer_.Key("params");
-    Writer_.StartObject();
 }
 
 void JsonManager::createHeaderError()
@@ -229,6 +348,16 @@ void JsonManager::createHeaderResult()
     MessageType_ = MessageType::RESULT;
     this->createHeaderJsonRcp();
     Writer_.Key("result");
+}
+
+void JsonManager::checkParamBegin()
+{
+    if (!HasParams_)
+    {
+        Writer_.Key("params");
+        Writer_.StartObject();
+        HasParams_ = true;
+    }
 }
 
 DBLK(

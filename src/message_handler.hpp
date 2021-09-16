@@ -49,7 +49,6 @@ class MessageHandler
             std::stringstream Message;
             std::string L;
 
-            Message << std::put_time(std::localtime(&t), "%Y-%m-%d %X") << "   ";
             switch (_Level)
             {
                 case ERROR:
@@ -83,6 +82,7 @@ class MessageHandler
                         Message << "\033[33m";
                     }
                 }
+                Message << std::put_time(std::localtime(&t), "%Y-%m-%d %X") << "   ";
 
                 if (SourceMap_.count(_Source) == 1)
                 {
