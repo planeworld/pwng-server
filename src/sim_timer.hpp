@@ -14,7 +14,7 @@ class SimTimer
         std::uint32_t getDaysFraction() const;
         std::uint32_t getHoursFraction() const;
         std::uint32_t getMinutesFraction() const;
-        std::uint32_t getSecondsFraction() const;
+        double        getSecondsFraction() const;
         double        getSeconds() const;
         double        getAcceleration() const;
         std::string   toStamp() const;
@@ -41,11 +41,11 @@ inline std::uint32_t SimTimer::getYears() const
     return Years_;
 }
 
-inline std::uint32_t SimTimer::getSecondsFraction() const
+inline double SimTimer::getSecondsFraction() const
 {
     constexpr double M_PER_S = 1.0/60.0;
     constexpr double S_PER_M = 60.0;
-    return static_cast<uint32_t>(((Seconds_ * M_PER_S) - std::floor(Seconds_ * M_PER_S)) * S_PER_M);
+    return ((Seconds_ * M_PER_S) - std::floor(Seconds_ * M_PER_S)) * S_PER_M;
 }
 
 inline std::uint32_t SimTimer::getMinutesFraction() const
