@@ -14,6 +14,9 @@ NetworkMessageBroker::NetworkMessageBroker(entt::registry& _Reg,
                     QueueToNet_(_QueueToNet),
                     QueueOut_(_QueueOut)
 {
+
+    //--- Distribution of messagas ---//
+
     auto& Messages = Reg_.ctx<MessageHandler>();
     Domains_.insert({"cmd_accelerate_simulation", [&](const NetworkDocument& _m)
     {
@@ -64,6 +67,8 @@ NetworkMessageBroker::NetworkMessageBroker(entt::registry& _Reg,
         QueueToSim_->enqueue(_m);
     }});
 
+    //--- Processing of messagas ---//
+    //
     ActionsMain_.insert({"cmd_shutdown", [&](const NetworkDocument& _d)
     {
         Messages.report("brk", "Server shutdown requested", MessageHandler::INFO);
@@ -77,7 +82,7 @@ NetworkMessageBroker::NetworkMessageBroker(entt::registry& _Reg,
             DBLK(Messages.report("brk", "Shutting down network...", MessageHandler::DEBUG_L1);)
             Reg_.ctx<NetworkManager>().stop();
             DBLK(Messages.report("brk", "...done", MessageHandler::DEBUG_L1);)
-            this->sendSuccess(_d.ClientID, (*_d.Payload)["id"].GetUint());
+            this->sendSuccess(_d.ClientID, JsonManager::getID(_d));
         }
         else
         {
@@ -93,10 +98,32 @@ NetworkMessageBroker::NetworkMessageBroker(entt::registry& _Reg,
         if (r.Success)
         {
             auto Accel = JsonManager::getParams(_d)[0].GetDouble();
-            if (Accel > 1.0e6) Accel = 1.0e6;
-            else if (Accel < 0.1) Accel = 0.1;
+            if (Accel > 1.0e6)
+            {
+                Accel = 1.0e6;
+                Json.createResult()
+                    .beginObject()
+                    .addNamedValue("success", true)
+                    .addNamedValue("notification", "Out of bounds, valid interval is [0.1, 1.0e6]. Clamping value.")
+                    .endObject()
+                    .finalise(JsonManager::getID(_d));
+                QueueOut_->enqueue({_d.ClientID, Json.getString()});
+            }
+            else if (Accel < 0.1)
+            {
+                Accel = 0.1;
+                Json.createResult()
+                    .beginObject()
+                    .addNamedValue("success", true)
+                    .addNamedValue("notification", "Out of bounds, valid interval is [0.1, 1.0e6]. Clamping value.")
+                    .endObject()
+                    .finalise(JsonManager::getID(_d));
+            }
+            else
+            {
+                this->sendSuccess(_d.ClientID, JsonManager::getID(_d));
+            }
             Reg_.ctx<SimulationManager>().setAccel(Accel);
-            this->sendSuccess(_d.ClientID, (*_d.Payload)["id"].GetUint());
         }
         else
         {
@@ -111,7 +138,7 @@ NetworkMessageBroker::NetworkMessageBroker(entt::registry& _Reg,
         if (r.Success)
         {
             Reg_.ctx<SimulationManager>().start();
-            this->sendSuccess(_d.ClientID, (*_d.Payload)["id"].GetUint());
+            this->sendSuccess(_d.ClientID, JsonManager::getID(_d));
         }
         else
         {
@@ -126,7 +153,7 @@ NetworkMessageBroker::NetworkMessageBroker(entt::registry& _Reg,
         if (r.Success)
         {
             Reg_.ctx<SimulationManager>().stop();
-            this->sendSuccess(_d.ClientID, (*_d.Payload)["id"].GetUint());
+            this->sendSuccess(_d.ClientID, JsonManager::getID(_d));
         }
         else
         {
@@ -159,16 +186,38 @@ void NetworkMessageBroker::process(const NetworkDocument& _d)
 {
     auto& Messages = Reg_.ctx<MessageHandler>();
 
-    const auto c = (*_d.Payload)["method"].GetString();
-    if (ActionsMain_.find(c) != ActionsMain_.end())
+    if (JsonManager::checkRequest(_d) == true)
     {
-        DBLK(Messages.report("brk", "Processing message", MessageHandler::DEBUG_L3);)
-        ActionsMain_[c](_d);
+        const auto c = JsonManager::getMethod(_d);
+        if (ActionsMain_.find(c) != ActionsMain_.end())
+        {
+            DBLK(Messages.report("brk", "Processing message", MessageHandler::DEBUG_L3);)
+            ActionsMain_[c](_d);
+        }
+        else
+        {
+            DBLK(Messages.report("brk", "Distributing message", MessageHandler::DEBUG_L1);)
+            this->distribute(_d);
+        }
     }
     else
     {
-        DBLK(Messages.report("brk", "Distributing message", MessageHandler::DEBUG_L1);)
-        this->distribute(_d);
+        Messages.report("brk", "Invalid jsonrpc request from client "+std::to_string(entt::to_integral(_d.ClientID)), MessageHandler::WARNING);
+        if (JsonManager::checkID(_d) == true)
+        {
+            this->sendError(JsonManager::ErrorType::REQUEST, _d.ClientID, JsonManager::getID(_d), "Missing field <method>");
+        }
+        else
+        {
+            if (JsonManager::checkMethod(_d))
+            {
+                this->sendError(JsonManager::ErrorType::REQUEST, _d.ClientID, 0, "Missing fields <id>");
+            }
+            else
+            {
+                this->sendError(JsonManager::ErrorType::REQUEST, _d.ClientID, 0, "Missing field <method>/<id>");
+            }
+        }
     }
 }
 
@@ -176,7 +225,7 @@ void NetworkMessageBroker::executeNet(const NetworkDocument& _d)
 {
     auto& Messages = Reg_.ctx<MessageHandler>();
 
-    const auto c = (*_d.Payload)["method"].GetString();
+    const auto c = JsonManager::getMethod(_d);
     if (ActionsNet_.find(c) != ActionsNet_.end())
     {
         ActionsNet_[c](_d);
@@ -184,8 +233,8 @@ void NetworkMessageBroker::executeNet(const NetworkDocument& _d)
     }
     else
     {
-        Messages.report("brk", "Unknown message"+std::string(c), MessageHandler::WARNING);
-        this->sendError(JsonManager::ErrorType::METHOD, _d.ClientID, (*_d.Payload)["id"].GetUint());
+        Messages.report("brk", "Unknown method "+std::string(c), MessageHandler::WARNING);
+        this->sendError(JsonManager::ErrorType::METHOD, _d.ClientID, JsonManager::getID(_d));
     }
 }
 
@@ -193,15 +242,15 @@ void NetworkMessageBroker::executeSim(const NetworkDocument& _d)
 {
     auto& Messages = Reg_.ctx<MessageHandler>();
 
-    const auto c = (*_d.Payload)["method"].GetString();
+    const auto c = JsonManager::getMethod(_d);
     if (ActionsSim_.find(c) != ActionsSim_.end())
     {
         ActionsSim_[c](_d);
     }
     else
     {
-        Messages.report("brk", "Unknown message"+std::string(c), MessageHandler::WARNING);
-        this->sendError(JsonManager::ErrorType::METHOD, _d.ClientID, (*_d.Payload)["id"].GetUint());
+        Messages.report("brk", "Unknown method "+std::string(c), MessageHandler::WARNING);
+        this->sendError(JsonManager::ErrorType::METHOD, _d.ClientID, JsonManager::getID(_d));
     }
 }
 
@@ -216,7 +265,7 @@ NetworkDocument NetworkMessageBroker::parse(const NetworkMessage& _m) const
     ParseResult r = d->Parse(_m.Payload.c_str());
     if (!r)
     {
-        this->sendError(JsonManager::ErrorType::PARSE, _m.ClientID, (*d)["id"].GetUint());
+        this->sendError(JsonManager::ErrorType::PARSE, _m.ClientID, JsonManager::getID({_m.ClientID, d}));
         std::this_thread::sleep_for(std::chrono::seconds(2));
     }
 
@@ -227,30 +276,30 @@ void NetworkMessageBroker::distribute(const NetworkDocument& _d)
 {
     auto& Messages = Reg_.ctx<MessageHandler>();
 
-    const auto c = (*_d.Payload)["method"].GetString();
+    const auto c = JsonManager::getMethod(_d);
     if (Domains_.find(c) != Domains_.end())
     {
         Domains_[c](_d);
     }
     else
     {
-        Messages.report("brk", "Unknown message "+std::string(c), MessageHandler::WARNING);
-        this->sendError(JsonManager::ErrorType::METHOD, _d.ClientID, (*_d.Payload)["id"].GetUint());
+        Messages.report("brk", "Unknown method "+std::string(c), MessageHandler::WARNING);
+        this->sendError(JsonManager::ErrorType::METHOD, _d.ClientID, JsonManager::getID(_d));
     }
 }
 
 void NetworkMessageBroker::sendError(JsonManager::ParamCheckResult _r) const
 {
     auto& Json = Reg_.ctx<JsonManager>();
-    Json.createError(_r.Error)
+    Json.createError(_r.Error, _r.Explanation.c_str())
         .finalise(_r.RequestID);
     QueueOut_->enqueue({_r.ClientID, Json.getString()});
 }
 
-void NetworkMessageBroker::sendError(JsonManager::ErrorType _e, JsonManager::ClientIDType _ClientID, JsonManager::RequestIDType _MessageID) const
+void NetworkMessageBroker::sendError(JsonManager::ErrorType _e, JsonManager::ClientIDType _ClientID, JsonManager::RequestIDType _MessageID, const char* _Data) const
 {
     auto& Json = Reg_.ctx<JsonManager>();
-    Json.createError(_e)
+    Json.createError(_e, _Data)
         .finalise(_MessageID);
     QueueOut_->enqueue({_ClientID, Json.getString()});
 }

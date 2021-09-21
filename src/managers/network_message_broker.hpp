@@ -29,7 +29,8 @@ class NetworkMessageBroker
     private:
 
         void distribute(const NetworkDocument& _d);
-        void sendError(JsonManager::ErrorType _e, JsonManager::ClientIDType _ClientID, JsonManager::RequestIDType _MessageID) const;
+        void sendError(JsonManager::ErrorType _e, JsonManager::ClientIDType _ClientID,
+                       JsonManager::RequestIDType _MessageID, const char* _Data = "") const;
         void sendError(JsonManager::ParamCheckResult _r) const;
         void sendSuccess(JsonManager::ClientIDType _ClientID, JsonManager::RequestIDType _MessageID) const;
 

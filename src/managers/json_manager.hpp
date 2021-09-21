@@ -49,6 +49,7 @@ class JsonManager
             ErrorType Error{ErrorType::METHOD};
             ClientIDType ClientID{0};
             RequestIDType RequestID{0};
+            std::string Explanation{""};
         };
 
         explicit JsonManager(entt::registry& _Reg) : Reg_(_Reg) {}
@@ -57,7 +58,7 @@ class JsonManager
         JsonManager& createRequest(const std::string& _Req);
 
         // Errors
-        JsonManager& createError(ErrorType _e);
+        JsonManager& createError(ErrorType _e, const char* _d = "");
 
         // Single value results
         JsonManager& createResult(const bool _r);
@@ -67,6 +68,7 @@ class JsonManager
         // Structured results (has to be followed by "array" or "object")
         JsonManager& createResult();
 
+        // Structured values
         JsonManager& beginArray();
         JsonManager& beginArray(const char* _Key);
         JsonManager& endArray();
@@ -74,23 +76,44 @@ class JsonManager
         JsonManager& beginObject();
         JsonManager& endObject();
 
-        JsonManager& addParam(const std::string& _Name, bool _v);
-        JsonManager& addParam(const std::string& _Name, double _v);
-        JsonManager& addParam(const std::string& _Name, std::uint32_t _v);
-        JsonManager& addParam(const std::string& _Name, std::uint64_t _v);
-        JsonManager& addParam(const std::string& _Name, const char* _v);
-        JsonManager& addParam(const std::string& _Name, const std::string& _v);
+        // Add parameter to JSON-RPC parameter section in request/notification
+        // Object with "param"-key will automatically created
+        JsonManager& addParam(const char* _Name, bool _v);
+        JsonManager& addParam(const char* _Name, double _v);
+        JsonManager& addParam(const char* _Name, std::uint32_t _v);
+        JsonManager& addParam(const char* _Name, std::uint64_t _v);
+        JsonManager& addParam(const char* _Name, const char* _v);
+        JsonManager& addParam(const char* _Name, const std::string& _v);
 
+        // Add a key-value pair
+        JsonManager& addNamedValue(const char* _n, bool _v);
+        JsonManager& addNamedValue(const char* _n, const char* _v);
+
+        // Add a singular value, mainly in arrays
         JsonManager& addValue(double _v);
         JsonManager& addValue(std::uint32_t _v);
         JsonManager& addValue(int _v);
         JsonManager& addValue(const char* _v);
 
-        ParamCheckResult checkParams(const NetworkDocument& _d, std::vector<ParamsType> _p);
-
         void finalise(RequestIDType _ReqID = 0);
         RequestIDType getRequestID() const {return RequestID_;}
         const char* getString() const {return Buffer_.GetString();}
+
+        ParamCheckResult checkParams(const NetworkDocument& _d, std::vector<ParamsType> _p);
+
+        // Helper functions
+        static bool checkID(const NetworkDocument& _d);
+        static bool checkMethod(const NetworkDocument& _d);
+        static bool checkRequest(const NetworkDocument& _d);
+        static auto getID(const NetworkDocument& _d)
+        {
+            return (*_d.Payload)["id"].GetUint();
+        }
+
+        static auto getMethod(const NetworkDocument& _d)
+        {
+            return (*_d.Payload)["method"].GetString();
+        }
 
         static auto getParams(const NetworkDocument& _d)
         {
@@ -137,5 +160,42 @@ class JsonManager
 
         RequestIDType RequestID_{0};
 };
+
+inline JsonManager& JsonManager::addNamedValue(const char* _n, bool _v)
+{
+    DBLK(this->checkCreate();)
+
+    Writer_.Key(_n);
+    Writer_.Bool(_v);
+
+    return *this;
+}
+
+inline JsonManager& JsonManager::addNamedValue(const char* _n, const char* _v)
+{
+    DBLK(this->checkCreate();)
+
+    Writer_.Key(_n);
+    Writer_.String(_v);
+
+    return *this;
+}
+
+inline bool JsonManager::checkID(const NetworkDocument& _d)
+{
+    if (_d.Payload->HasMember("id")) return true;
+    else return false;
+}
+
+inline bool JsonManager::checkMethod(const NetworkDocument& _d)
+{
+    if (_d.Payload->HasMember("method")) return true;
+    else return false;
+}
+
+inline bool JsonManager::checkRequest(const NetworkDocument& _d)
+{
+    return (JsonManager::checkMethod(_d) & JsonManager::checkID(_d));
+}
 
 #endif // JSON_MANAGER_HPP

@@ -640,6 +640,6 @@ void SimulationManager::createTire()
     MassData.mass = 10.0f;
     Tire.Rim->SetMassData(&MassData);
 
-    std::cout << "Mass (Rim): " << Tire.Rim->GetMass() << "kg" << std::endl;
-    std::cout << "Mass (Rubber): " << Tire.Rubber[0]->GetMass()*TireComponent::SEGMENTS << "kg" << std::endl;
+    // std::cout << "Mass (Rim): " << Tire.Rim->GetMass() << "kg" << std::endl;
+    // std::cout << "Mass (Rubber): " << Tire.Rubber[0]->GetMass()*TireComponent::SEGMENTS << "kg" << std::endl;
 }
