@@ -421,7 +421,7 @@ void SimulationManager::queueSimStats(entt::entity _ClientID) const
 
     Json.createNotification("sim_stats")
         .addParam("ts", SimTime_.toStamp())
-        .addParam("ts_f", 3600.0*SimStepSize_)
+        .addParam("ts_f", SimTime_.getAcceleration())
         .addParam("stat_sim", IsSimRunning_)
         .finalise();
 
