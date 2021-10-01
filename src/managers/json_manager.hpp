@@ -47,7 +47,6 @@ class JsonManager
         {
             bool Success{true};
             ErrorType Error{ErrorType::METHOD};
-            ClientIDType ClientID{0};
             RequestIDType RequestID{0};
             std::string Explanation{""};
         };
@@ -99,26 +98,20 @@ class JsonManager
         RequestIDType getRequestID() const {return RequestID_;}
         const char* getString() const {return Buffer_.GetString();}
 
-        ParamCheckResult checkParams(const NetworkDocument& _d, std::vector<ParamsType> _p);
+        // Helper functions to
+        // * check for JSON-RPC keys
+        // * get JSON-RPC specific values
+        // * replace JSON-RPC values in document
 
-        // Helper functions
-        static bool checkID(const NetworkDocument& _d);
-        static bool checkMethod(const NetworkDocument& _d);
-        static bool checkRequest(const NetworkDocument& _d);
-        static auto getID(const NetworkDocument& _d)
-        {
-            return (*_d.Payload)["id"].GetUint();
-        }
+        ParamCheckResult checkParams(std::shared_ptr<const rapidjson::Document> _d, std::vector<ParamsType> _p);
 
-        static auto getMethod(const NetworkDocument& _d)
-        {
-            return (*_d.Payload)["method"].GetString();
-        }
-
-        static auto getParams(const NetworkDocument& _d)
-        {
-            return (*_d.Payload)["params"].GetArray();
-        }
+        static bool checkID(std::shared_ptr<const rapidjson::Document> _d);
+        static bool checkMethod(std::shared_ptr<const rapidjson::Document> _d);
+        static bool checkRequest(std::shared_ptr<const rapidjson::Document> _d);
+        static auto getID(std::shared_ptr<const rapidjson::Document> _d);
+        static auto getMethod(std::shared_ptr<const rapidjson::Document> _d);
+        static auto getParams(std::shared_ptr<const rapidjson::Document> _d);
+        static void replaceMethod(std::shared_ptr<rapidjson::Document> _d, const char* _s);
 
     private:
 
@@ -181,21 +174,41 @@ inline JsonManager& JsonManager::addNamedValue(const char* _n, const char* _v)
     return *this;
 }
 
-inline bool JsonManager::checkID(const NetworkDocument& _d)
+inline bool JsonManager::checkID(std::shared_ptr<const rapidjson::Document> _d)
 {
-    if (_d.Payload->HasMember("id")) return true;
+    if (_d->HasMember("id")) return true;
     else return false;
 }
 
-inline bool JsonManager::checkMethod(const NetworkDocument& _d)
+inline bool JsonManager::checkMethod(std::shared_ptr<const rapidjson::Document> _d)
 {
-    if (_d.Payload->HasMember("method")) return true;
+    if (_d->HasMember("method")) return true;
     else return false;
 }
 
-inline bool JsonManager::checkRequest(const NetworkDocument& _d)
+inline bool JsonManager::checkRequest(std::shared_ptr<const rapidjson::Document> _d)
 {
     return (JsonManager::checkMethod(_d) & JsonManager::checkID(_d));
+}
+
+inline auto JsonManager::getID(std::shared_ptr<const rapidjson::Document> _d)
+{
+    return (*_d)["id"].GetUint();
+}
+
+inline auto JsonManager::getMethod(std::shared_ptr<const rapidjson::Document> _d)
+{
+    return (*_d)["method"].GetString();
+}
+
+inline auto JsonManager::getParams(std::shared_ptr<const rapidjson::Document> _d)
+{
+    return (*_d)["params"].GetArray();
+}
+
+inline void JsonManager::replaceMethod(std::shared_ptr<rapidjson::Document> _d, const char* _s)
+{
+    (*_d)["method"].SetString(_s, _d->GetAllocator());
 }
 
 #endif // JSON_MANAGER_HPP

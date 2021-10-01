@@ -29,7 +29,7 @@ SimulationManager::~SimulationManager()
     }
 }
 
-void SimulationManager::init(moodycamel::ConcurrentQueue<NetworkDocument>* const _QueueSimIn,
+void SimulationManager::init(moodycamel::ConcurrentQueue<NetworkMessageClassified>* const _QueueSimIn,
                              moodycamel::ConcurrentQueue<NetworkMessage>* const _OutputQueue)
 {
     auto& Messages = Reg_.ctx<MessageHandler>();
@@ -477,7 +477,7 @@ void SimulationManager::run()
     {
         SimulationTimer_.start();
 
-        NetworkDocument d;
+        NetworkMessageClassified d;
 
         QueueInTimer_.start();
         while (QueueSimIn_->try_dequeue(d))

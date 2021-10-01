@@ -98,8 +98,8 @@ int main(int argc, char* argv[])
     {
         moodycamel::ConcurrentQueue<NetworkMessage> InputQueue;
         moodycamel::ConcurrentQueue<NetworkMessage> OutputQueue;
-        moodycamel::ConcurrentQueue<NetworkDocument> QueueSimIn;
-        moodycamel::ConcurrentQueue<NetworkDocument> QueueNetIn;
+        moodycamel::ConcurrentQueue<NetworkMessageClassified> QueueSimIn;
+        moodycamel::ConcurrentQueue<NetworkMessageParsed> QueueNetIn;
 
         Reg.set<JsonManager>(Reg);
         Reg.set<NetworkManager>(Reg);
@@ -124,7 +124,7 @@ int main(int argc, char* argv[])
                 {
                     DBLK(Messages.report("prg", "Dequeueing incoming message:\n"+Message.Payload, MessageHandler::DEBUG_L3);)
 
-                    Broker.process(Broker.parse(Message));
+                    Broker.process(Message);
                 }
                 MainTimer.stop();
                 if (10 - MainTimer.elapsed_ms() > 0.0)

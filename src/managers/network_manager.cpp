@@ -4,7 +4,7 @@
 #include "network_message_broker.hpp"
 #include "timer.hpp"
 
-bool NetworkManager::init(moodycamel::ConcurrentQueue<NetworkDocument>* const _QueueNetIn,
+bool NetworkManager::init(moodycamel::ConcurrentQueue<NetworkMessageParsed>* const _QueueNetIn,
                           moodycamel::ConcurrentQueue<NetworkMessage>* const _InputQueue,
                           moodycamel::ConcurrentQueue<NetworkMessage>* const _OutputQueue,
                           int _Port)
@@ -157,7 +157,7 @@ void NetworkManager::run()
 
         }
 
-        NetworkDocument d;
+        NetworkMessageParsed d;
 
         while (QueueNetIn_->try_dequeue(d))
         {

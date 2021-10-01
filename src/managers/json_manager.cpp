@@ -238,15 +238,15 @@ void JsonManager::finalise(RequestIDType _ReqID)
     HasParams_ = false;
 }
 
-JsonManager::ParamCheckResult JsonManager::checkParams(const NetworkDocument& _d, std::vector<ParamsType> _p)
+JsonManager::ParamCheckResult JsonManager::checkParams(std::shared_ptr<const rapidjson::Document> _d, std::vector<ParamsType> _p)
 {
     ParamCheckResult ReturnValue;
 
     auto& Messages = Reg_.ctx<MessageHandler>();
 
-    if (_d.Payload->HasMember("params"))
+    if (_d->HasMember("params"))
     {
-        const auto& ParamsArray = (*_d.Payload)["params"].GetArray();
+        const auto& ParamsArray = (*_d)["params"].GetArray();
         if (ParamsArray.Size() == _p.size())
         {
             for (auto i=0u; i < ParamsArray.Size(); ++i)
@@ -257,14 +257,14 @@ JsonManager::ParamCheckResult JsonManager::checkParams(const NetworkDocument& _d
                     case ParamsType::NUMBER:
                         if (ParamsArray[0].IsNumber())
                         {
-                            ReturnValue = {true, ErrorType::PARAMS, _d.ClientID, 0};
+                            ReturnValue = {true, ErrorType::PARAMS, 0};
                             ParamTypeOkay = true;
                         }
                         break;
                     case ParamsType::STRING:
                         if (ParamsArray[0].IsString())
                         {
-                            ReturnValue = {true, ErrorType::PARAMS, _d.ClientID, 0};
+                            ReturnValue = {true, ErrorType::PARAMS, 0};
                             ParamTypeOkay = true;
                         }
                         break;
@@ -272,7 +272,7 @@ JsonManager::ParamCheckResult JsonManager::checkParams(const NetworkDocument& _d
                 if (!ParamTypeOkay)
                 {
                     Messages.report("jsn", "Wrong parameter type.", MessageHandler::WARNING);
-                    ReturnValue = {false, ErrorType::PARAMS, _d.ClientID, (*_d.Payload)["id"].GetUint(),
+                    ReturnValue = {false, ErrorType::PARAMS, (*_d)["id"].GetUint(),
                                    "Wrong type for parameter "+std::to_string(i+1)};
                 }
             }
@@ -282,7 +282,7 @@ JsonManager::ParamCheckResult JsonManager::checkParams(const NetworkDocument& _d
             Messages.report("jsn", "Wrong number of parameters: "+
                             std::to_string(ParamsArray.Size())+" of "+
                             std::to_string(_p.size()), MessageHandler::WARNING);
-            ReturnValue = {false, ErrorType::PARAMS, _d.ClientID, (*_d.Payload)["id"].GetUint(),
+            ReturnValue = {false, ErrorType::PARAMS, (*_d)["id"].GetUint(),
                            "Wrong number of parameters, "+
                            std::to_string(ParamsArray.Size())+" of "+
                            std::to_string(_p.size())};
@@ -296,7 +296,7 @@ JsonManager::ParamCheckResult JsonManager::checkParams(const NetworkDocument& _d
             r = false;
             Messages.report("jsn", "Parameter member missing: 0 of " + std::to_string(_p.size()) + " parameters.", MessageHandler::WARNING);
         }
-        ReturnValue = {r, ErrorType::PARAMS, _d.ClientID, (*_d.Payload)["id"].GetUint()};
+        ReturnValue = {r, ErrorType::PARAMS, (*_d)["id"].GetUint()};
     }
 
     return ReturnValue;

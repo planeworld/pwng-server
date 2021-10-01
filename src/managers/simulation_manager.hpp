@@ -30,7 +30,7 @@ class SimulationManager
 
         bool isRunning() const {return IsRunning_;}
 
-        void init(moodycamel::ConcurrentQueue<NetworkDocument>* const _QueueSimIn,
+        void init(moodycamel::ConcurrentQueue<NetworkMessageClassified>* const _QueueSimIn,
                   moodycamel::ConcurrentQueue<NetworkMessage>* const _OutputQueue);
         void start();
         void stop();
@@ -59,7 +59,7 @@ class SimulationManager
         IntegratorSystem SysIntegrator_;
         NameSystem       SysName_;
 
-        moodycamel::ConcurrentQueue<NetworkDocument>* QueueSimIn_{nullptr};
+        moodycamel::ConcurrentQueue<NetworkMessageClassified>* QueueSimIn_{nullptr};
         moodycamel::ConcurrentQueue<NetworkMessage>* OutputQueue_{nullptr};
 
         SimTimer SimTime_;

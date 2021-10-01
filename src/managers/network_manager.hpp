@@ -28,7 +28,7 @@ class NetworkManager
 
         bool isRunning() const {return IsRunning_;}
 
-        bool init(moodycamel::ConcurrentQueue<NetworkDocument>* const _QueueNetIn,
+        bool init(moodycamel::ConcurrentQueue<NetworkMessageParsed>* const _QueueNetIn,
                   moodycamel::ConcurrentQueue<NetworkMessage>* const _InputQueue,
                   moodycamel::ConcurrentQueue<NetworkMessage>* const _OutputQueue,
                   int _Port);
@@ -46,7 +46,7 @@ class NetworkManager
         std::stringstream ErrorStream_;
         std::stringstream MessageStream_;
 
-        moodycamel::ConcurrentQueue<NetworkDocument>* QueueNetIn_{nullptr};
+        moodycamel::ConcurrentQueue<NetworkMessageParsed>* QueueNetIn_{nullptr};
         moodycamel::ConcurrentQueue<NetworkMessage>* InputQueue_{nullptr};
         moodycamel::ConcurrentQueue<NetworkMessage>* OutputQueue_{nullptr};
 
