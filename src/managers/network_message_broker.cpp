@@ -19,21 +19,15 @@ NetworkMessageBroker::NetworkMessageBroker(entt::registry& _Reg,
     auto& Messages = Reg_.ctx<MessageHandler>();
     Domains_.insert({"cmd_accelerate_simulation", [&](const NetworkMessageParsed& _m, NetworkMessageClassificationType _c)
     {
-        Messages.report("brk", "Simulation acceleration requested", MessageHandler::INFO);
-        DBLK(Messages.report("brk", "Appending request to simulation queue", MessageHandler::DEBUG_L1);)
-        QueueToSim_->enqueue({_m.ClientID, _c, _m.Payload});
+        this->distributeCommand(_m, _c, "Simulation acceleration");
     }});
     Domains_.insert({"cmd_start_simulation", [&](const NetworkMessageParsed& _m, NetworkMessageClassificationType _c)
     {
-        Messages.report("brk", "Simulation start requested", MessageHandler::INFO);
-        DBLK(Messages.report("brk", "Appending request to simulation queue", MessageHandler::DEBUG_L1);)
-        QueueToSim_->enqueue({_m.ClientID, _c, _m.Payload});
+        this->distributeCommand(_m, _c, "Simulation start");
     }});
     Domains_.insert({"cmd_stop_simulation", [&](const NetworkMessageParsed& _m, NetworkMessageClassificationType _c)
     {
-        Messages.report("brk", "Simulation stop requested", MessageHandler::INFO);
-        DBLK(Messages.report("brk", "Appending request to simulation queue", MessageHandler::DEBUG_L1);)
-        QueueToSim_->enqueue({_m.ClientID, _c, _m.Payload});
+        this->distributeCommand(_m, _c, "Simulation stop");
     }});
     Domains_.insert({"sub_dynamic_data", [&](const NetworkMessageParsed& _m, NetworkMessageClassificationType _c)
     {

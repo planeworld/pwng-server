@@ -34,6 +34,7 @@ class NetworkMessageBroker
         void sendError(JsonManager::ClientIDType _ClientID, JsonManager::ParamCheckResult _r) const;
         void sendSuccess(JsonManager::ClientIDType _ClientID, JsonManager::RequestIDType _MessageID) const;
 
+        void distributeCommand(const NetworkMessageParsed _m, NetworkMessageClassificationType _c, const std::string& _s);
         void sub(const NetworkMessageParsed _m, NetworkMessageClassificationType _c, const std::string& _s);
         void unsub(const NetworkMessageParsed _m, NetworkMessageClassificationType _c, const std::string& _s);
 
@@ -62,6 +63,14 @@ class NetworkMessageBroker
         };
 
 };
+
+inline void NetworkMessageBroker::distributeCommand(const NetworkMessageParsed _m, NetworkMessageClassificationType _c, const std::string& _s)
+{
+    auto& Messages = Reg_.ctx<MessageHandler>();
+    Messages.report("brk", _s+" requested", MessageHandler::INFO);
+    DBLK(Messages.report("brk", "Appending request to simulation queue", MessageHandler::DEBUG_L1);)
+    QueueToSim_->enqueue({_m.ClientID, _c, _m.Payload});
+}
 
 inline void NetworkMessageBroker::sub(const NetworkMessageParsed _m, NetworkMessageClassificationType _c,
                                       const std::string& _s)
