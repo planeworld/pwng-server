@@ -226,7 +226,6 @@ NetworkMessageBroker::NetworkMessageBroker(entt::registry& _Reg,
                 this->sendError(JsonManager::ErrorType::METHOD, _d.ClientID, JsonManager::getID(_d.Payload), "Allowed subscription types: [s01, s05, s1, s5, s10]");
                 break;
         }
-        Reg_.emplace_or_replace<PerformanceStatsSubscriptionTag01>(_d.ClientID);
     }});
     ActionsSim_.insert({"uns_perf_stats", [&](const NetworkMessageClassified& _d)
     {
@@ -253,7 +252,6 @@ NetworkMessageBroker::NetworkMessageBroker(entt::registry& _Reg,
                 this->sendError(JsonManager::ErrorType::METHOD, _d.ClientID, JsonManager::getID(_d.Payload), "Allowed subscription types: [s01, s05, s1, s5, s10]");
                 break;
         }
-        Reg_.emplace_or_replace<PerformanceStatsSubscriptionTag01>(_d.ClientID);
     }});
     ActionsSim_.insert({"sub_sim_stats", [&](const NetworkMessageClassified& _d)
     {
