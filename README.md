@@ -23,6 +23,7 @@ This section should give an overview about major implementation topics, mostly a
 
 - [ ] Procedurally generate planets based on Poisson distribution
 - [ ] Accept subscriptions to specific star systems
+- [ ] Implement a new galaxy model: For now, the galaxy arms are based on a hyperbolic spiral parameterized and varied by randomly generated distributions. In the future, a [density wave model](https://en.wikipedia.org/wiki/Density_wave_theory) should be implemented. Not only is this more accurate, it also allows for dynamic galaxies.
 - [ ] 2021-10-01: Due to restructuring of the broker, the server handles different types of subscriptions now, varying from event-based to different frequencies. Subscribing to a frequency that is not supported by the topic will result in a response to the server, specifying valid values. The specification of the API and its topics will be explained in the [Client-Server Communication Protocol](#client-server-communication-protocol).
 - [x] 2021-08-27: Using the broker, JSON-RCP requests will now generate correct response, i.e result or error
 - [x] 2021-08-25: Finally, a message broker has been implemented to centralise message handling. In the future this allows for easier implementation of choosable updade frequencies.
