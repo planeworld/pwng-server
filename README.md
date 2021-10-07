@@ -23,6 +23,7 @@ This section should give an overview about major implementation topics, mostly a
 
 - [ ] Procedurally generate planets based on Poisson distribution
 - [ ] Accept subscriptions to specific star systems
+- [ ] 2021-10-01: Due to restructuring of the broker, the server handles different types of subscriptions now, varying from event-based to different frequencies. Subscribing to a frequency that is not supported by the topic will result in a response to the server, specifying valid values. The specification of the API and its topics will be explained in the [Client-Server Communication Protocol](#client-server-communication-protocol).
 - [x] 2021-08-27: Using the broker, JSON-RCP requests will now generate correct response, i.e result or error
 - [x] 2021-08-25: Finally, a message broker has been implemented to centralise message handling. In the future this allows for easier implementation of choosable updade frequencies.
 - [x] 2021-07-01: The server transmits two timestamps now: The first one is a simulation time, which just increments seconds (as a floating point number, so milliseconds are covered) and overflows when reaching a year, counting years in an unsigned integer variable. This is the virtual simulation time which is independend of any system clock and therefore load / processing power. Second is a realtime timestamp which transmits microseconds since epoch (1970-01-01, 00:00 UTC) and should be quite portable. This timestamp is mainly usable for syncing clients and interpolation/extrapolation of frames for smooth realtime visuals.
