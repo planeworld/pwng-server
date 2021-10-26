@@ -93,8 +93,16 @@ At the server side, EnTT is used for two main purposes at the moment:
 ### Magnum
 
 The client heavily relies on the excellent [Magnum](https://github.com/mosra/magnum) middleware.
-1. At the moment, stars are just drawn as circles with the stock shader. The number of segments is based on the circles size, which basically is a very naive 3-stage LOD. In the future, a custom shader will draw dots if size is small in a single draw call. For circles, instancing can be implemented. Furthermore, since the stars of the galaxy are static for now, galaxies can be prerenderd to a texture in order to only draw a textured quad for lower LODs.
-2. The main scene (without UI) is rendered to a texture. This allows for arbitrary resolutions. If the resolution is lower than the native window resolution, the texture is just rendered to screen. For higher resolutions, i.e. SSAA (super sampling anti-aliasing), rendering consists of two stages: First, the scene is rendered to a high resolution texture. Second, a custom Gaussian blur shader is used for lowpass filtering with several passes, depending on super sampling factor. Hence, the final rendering to screen (which effectively is a downsampling of the image) follows the Nyquist-Shannon theorem to avoid aliasing and thus, to produce the desired anti-aliased result. 
+1. At the moment, stars are drawn as circles with the stock shader. The number of segments is based on the circles size, which basically is a very naive 3-stage LOD.
+Apart from that, a custom shader draws the stars as dots if zoomed out (i.e., if the display size of the stars is roughly smaller than one pixel). Using a custom shader, the rendered mesh consists of all stars, so drawing can be done within a single draw call.
+In the future, since the stars of the galaxy are static for now, galaxies could be prerenderd to a texture in order to only draw a textured quad for lower LODs.
+2. The main scene (without UI) is rendered to a texture. This allows for arbitrary resolutions. If the resolution is lower than the native window resolution, the texture is just rendered to screen. For higher resolutions, i.e. SSAA (super sampling anti-aliasing), rendering consists of two stages: First, the scene is rendered to a high resolution texture. Second, a custom Gaussian blur shader is used for lowpass filtering with several passes, depending on super sampling factor. Hence, the final rendering to screen (which effectively is a downsampling of the image) follows the Nyquist-Shannon theorem to avoid aliasing and thus, to produce the desired anti-aliased result.
+
+Figure 3 shows a work in progress shot of the future render pipeline (it's also a kind of design document for implementation, so at the moment it is a very rough draft with a lot of text being just copy-pasted).
+
+![render pipeline](screenshots/render_pipeline.png?raw=true)
+
+*Figure 3: WIP screenshot of the render pipeline*
 
 ## Client-Server Communication Protocol
 
