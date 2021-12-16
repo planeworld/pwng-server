@@ -47,7 +47,7 @@ This section should give an overview about major implementation topics, mostly a
 
 Planeworld is a 2D galaxy/universe simulation engine (server component) and a [desktop client](https://github.com/planeworld/pwng-client) that can connect via websocket. The following screenshot (Figure 1) shows a procedurally generated galaxy with two spiral arms. Stars are are all within the main sequence (stellar classes M - O) for now. Stellar class distribution as well as masses, temperatures and radii are generated using probability distributions with respect to the information available.
 
-![galaxy representation](screenshots/galaxy_2021-04-09.png?raw=true)
+![galaxy representation](screenshots/galaxy_2021-12-16.png?raw=true)
 
 *Figure 1: Procedurally generated galaxy*
 
