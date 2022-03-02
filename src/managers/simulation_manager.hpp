@@ -43,7 +43,6 @@ class SimulationManager
 
         std::uint64_t getTimeStamp() const;
 
-        void generateGalaxy();
         void processSubscriptions(Timer& _t);
         void queueDynamicData(entt::entity _ClientID) const;
         void queueGalaxyData(entt::entity _ClientID, JsonManager::RequestIDType _ReqID) const;

@@ -18,8 +18,9 @@ enum class SpectralClassE : int
     O = 6
 };
 
-constexpr double SOLAR_MASSES{6.96342e8};
-constexpr double SOLAR_RADIUS{6.957e8};
+constexpr double SOLAR_LUMINOSITY{3.828e26}; // W
+constexpr double SOLAR_MASSES{6.96342e8}; // kg
+constexpr double SOLAR_RADIUS{6.957e8}; // m
 
 // Parameters for random distributions
 // Normal distribution, values are mean and standard deviation
@@ -43,8 +44,18 @@ static std::array<std::pair<double, double>, 7> StarRadiusDistributionParams{{
     {  4.2*SOLAR_RADIUS,    1.2*SOLAR_RADIUS},
     { 12.5*SOLAR_RADIUS,   2.95*SOLAR_RADIUS} // Assumption: largest main sequence star is 18.4 times solar radius
 }};
+static std::array<std::pair<double, double>, 7> StarLuminosityDistributionParams{{
+    { 1.0e-2*SOLAR_LUMINOSITY,   0.05*SOLAR_LUMINOSITY},
+    { 0.83*SOLAR_LUMINOSITY,  0.065*SOLAR_LUMINOSITY},
+    {1.055*SOLAR_LUMINOSITY, 0.0475*SOLAR_LUMINOSITY},
+    {1.275*SOLAR_LUMINOSITY, 0.0625*SOLAR_LUMINOSITY},
+    {  1.6*SOLAR_LUMINOSITY,    0.1*SOLAR_LUMINOSITY},
+    {  4.2*SOLAR_LUMINOSITY,    1.2*SOLAR_LUMINOSITY},
+    { 1.0e6*SOLAR_LUMINOSITY,   2.95*SOLAR_LUMINOSITY} // Assumption: largest main sequence star is 18.4 times solar radius
+}};
 static std::array<std::pair<double, double>, 7> StarTemperatureDistributionParams{{
     {3050.0, 325.0},
+    // {2050.0, 1325.0},
     {4450.0, 375.0},
     {5600.0, 200.0},
     {6750.0, 375.0},

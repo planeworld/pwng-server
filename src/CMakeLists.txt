@@ -12,6 +12,7 @@ set(HEADERS
   components/sim_components.hpp
   components/subscription_components.hpp
   components/velocity_component.hpp
+  managers/galaxy_manager.hpp
   managers/json_manager.hpp
   managers/network_manager.hpp
   managers/network_message_broker.hpp
@@ -28,6 +29,7 @@ set(HEADERS
 )
 
 set(SOURCES
+  managers/galaxy_manager.cpp
   managers/json_manager.cpp
   managers/network_manager.cpp
   managers/network_message_broker.cpp
