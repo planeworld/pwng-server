@@ -147,14 +147,25 @@ void NetworkManager::run()
         NetworkMessage Message;
         while (OutputQueue_->try_dequeue(Message))
         {
-            auto Con = ConIDToHdl_[Message.ClientID];
-            websocketpp::lib::error_code ErrorCode;
-            Server_.send(Con, Message.Payload, websocketpp::frame::opcode::text, ErrorCode);
-            if (ErrorCode)
-            {
-                Messages.report("net", "Sending failed: " + ErrorCode.message());
-            }
+            std::lock_guard<std::mutex> Lock(ConnectionsLock_);
 
+            auto Con = ConIDToHdl_.find(Message.ClientID);
+            if (Con != ConIDToHdl_.end())
+            {
+                // auto Con = ConIDToHdl_[Message.ClientID];
+                websocketpp::lib::error_code ErrorCode;
+                Server_.send(Con->second, Message.Payload, websocketpp::frame::opcode::text, ErrorCode);
+                if (ErrorCode)
+                {
+                    Messages.report("net", "Sending failed: " + ErrorCode.message());
+                }
+            }
+            DBLK(
+                else
+                {
+                    Messages.report("net", "Can't send to client, connection no longer valid.", MessageHandler::DEBUG_L1);
+                }
+            )
         }
 
         NetworkMessageParsed d;
