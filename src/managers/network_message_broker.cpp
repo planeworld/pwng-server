@@ -178,7 +178,12 @@ NetworkMessageBroker::NetworkMessageBroker(entt::registry& _Reg,
         DBLK(Messages.report("brk", "Subscribing on galaxy data", MessageHandler::DEBUG_L1);)
         if (_d.Class == NetworkMessageClassificationType::EVT)
         {
-            Reg_.emplace_or_replace<GalaxyDataSubscriptionComponent>(_d.ClientID);
+            if (!Reg_.all_of<GalaxyDataSubscriptionComponent>(_d.ClientID))
+                Reg_.emplace<GalaxyDataSubscriptionComponent>(_d.ClientID);
+            DBLK(
+            else
+                Messages.report("brk", "Subscription already exists, nothing to do.", MessageHandler::DEBUG_L1);
+            )
         }
         else
         {

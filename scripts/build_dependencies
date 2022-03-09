@@ -21,7 +21,7 @@ echo "--- CLONING BOX2D ---"
 git clone --branch v2.4.1 --depth 1 https://github.com/erincatto/box2d.git > /dev/null
 
 echo "--- CLONING ENTT ---"
-git clone --branch v3.5.2 --depth 1 https://github.com/skypjack/entt.git > /dev/null
+git clone --branch v3.9.0 --depth 1 https://github.com/skypjack/entt.git > /dev/null
 
 echo "--- CLONING RAPID_JSON ---"
 git clone --branch v1.1.0 --depth 1 https://github.com/Tencent/rapidjson > /dev/null

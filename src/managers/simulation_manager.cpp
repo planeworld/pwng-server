@@ -93,6 +93,11 @@ void SimulationManager::init(moodycamel::ConcurrentQueue<NetworkMessageClassifie
     SysName_.setName(SolarSystem, "Solar System");
 
     Reg_.ctx<GalaxyManager>().generateGalaxy();
+    Reg_.view<GalaxyDataSubscriptionComponent>().each(
+        [](auto& _t)
+        {
+            _t.Transmitted = false;
+        });
 
     Thread_ = std::thread(&SimulationManager::run, this);
     Messages.report("sim", "Simulation thread started successfully", MessageHandler::INFO);
