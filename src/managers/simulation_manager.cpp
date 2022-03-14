@@ -316,6 +316,8 @@ void SimulationManager::queuePerformanceStats(entt::entity _ClientID) const
         .addParam("t_phy", PhysicsTimer_.elapsed())
         .addParam("t_queue_in", QueueInTimer_.elapsed())
         .addParam("t_queue_out", QueueOutTime_)
+        .addParam("nr_entities_alive", Reg_.alive())
+        .addParam("nr_entities_total", Reg_.size())
         .finalise();
 
     OutputQueue_->enqueue({_ClientID, Json.getString()});
